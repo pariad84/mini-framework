@@ -41,6 +41,12 @@ Open `index.html` for Task Tracker: it seeds two sample projects and three sampl
 
 Open `recipes.html` for Recipe Box: it seeds two categories and two recipes. Use the nav bar to move between Home/Categories/Recipes; click a row to edit it in a popup, or "+ New Recipe"/"+ New Category" to add one -- either way the page's own list refreshes in place, no reload or popup-within-popup needed.
 
+## Known limitation: swapping to a real network backend isn't free
+
+Essential #3 above claims that swapping the storage layer only means rewriting `fn.data.select/insert/update/delete`. Verified against a real local HTTP server, that claim holds *only* because those four functions can stay synchronous (using synchronous XHR to keep the exact same call-and-get-a-return-value shape localStorage has) -- no other file needed a single change.
+
+A real production backend would use `fetch`/Promises instead, which means `fn.data.*` would have to become async -- and every place that currently does `var rows = fn.data.select(...)` and uses `rows` immediately (throughout `list`/`form`, and every app built on them) would need to change too. That ripple is real work, and deliberately not done speculatively: the right async shape (loading states, error handling, what a popup does mid-save) can only be designed against a real backend that needs it, not guessed at in the abstract. See "Adding to the framework" above -- this is the same principle, applied to a foundational shape instead of a single feature.
+
 ## Relationship to devtool.simple
 
 This is a one-way extraction, not a shared dependency: `devtool.simple`'s `fn.js` stays fully self-contained (a single file is core to it being a bookmarklet), so it doesn't load anything from here. If a fix or improvement discovered here (like the `textarea` gap above) is worth having in `devtool.simple` too, it gets ported over by hand.
