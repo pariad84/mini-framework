@@ -13,6 +13,14 @@
         console.log('[fn.' + scope + ']', action, ...args);
     };
 
+    // 5. render escape hatch -- a column can carry a JS source string instead of a fixed type,
+    // so a resource definition (pure data) can extend what a cell/field does without touching
+    // this file. Same mechanism serves both list cells and form fields.
+    fn.render = function(opt = {}) {
+        var render = new Function('return (' + opt.source + ')')();
+        return render(opt.data);
+    };
+
     // 1. fn.element.create -- the one DOM-builder primitive everything else is built from.
     fn.element.create = function(opt = {}) {
         var el = document.createElement(opt.tagName);
@@ -72,19 +80,19 @@
     // 3. fn.data.select/insert/update/delete -- CRUD abstraction. Every layout below only ever
     // talks to these four functions, so swapping localStorage for a real backend later only
     // means rewriting this block, not any layout.
-    fn.data._.readTable = function(opt = {}) {
+    fn.data._.read = function(opt = {}) {
         var raw = typeof(Storage) !== "undefined" ? localStorage.getItem(opt.key) : null;
         return raw ? JSON.parse(raw) : [];
     };
 
-    fn.data._.writeTable = function(opt = {}) {
+    fn.data._.write = function(opt = {}) {
         if (typeof(Storage) !== "undefined") {
             localStorage.setItem(opt.key, JSON.stringify(opt.rows));
         }
     };
 
     fn.data.select = function(opt = {}) {
-        var rows = fn.data._.readTable({ key : opt.key });
+        var rows = fn.data._.read({ key : opt.key });
         if (opt.id !== undefined) {
             var row = rows.find(function(row) { return row.id === opt.id; });
             fn.log('data', 'select', opt.key, 'id=' + opt.id, row);
@@ -95,40 +103,32 @@
     };
 
     fn.data.insert = function(opt = {}) {
-        var rows = fn.data._.readTable({ key : opt.key });
+        var rows = fn.data._.read({ key : opt.key });
         var nextId = rows.reduce(function(max, row) { return Math.max(max, row.id); }, 0) + 1;
         var row = { id : nextId, data : opt.data };
         rows.push(row);
-        fn.data._.writeTable({ key : opt.key, rows : rows });
+        fn.data._.write({ key : opt.key, rows : rows });
         fn.log('data', 'insert', opt.key, row);
         return row;
     };
 
     fn.data.update = function(opt = {}) {
-        var rows = fn.data._.readTable({ key : opt.key });
+        var rows = fn.data._.read({ key : opt.key });
         var row = rows.find(function(r) { return r.id === opt.id; });
         if (row) {
             row.data = opt.data;
-            fn.data._.writeTable({ key : opt.key, rows : rows });
+            fn.data._.write({ key : opt.key, rows : rows });
         }
         fn.log('data', 'update', opt.key, 'id=' + opt.id, row);
         return row;
     };
 
     fn.data.delete = function(opt = {}) {
-        var rows = fn.data._.readTable({ key : opt.key });
+        var rows = fn.data._.read({ key : opt.key });
         var row = rows.find(function(row) { return row.id === opt.id; });
-        fn.data._.writeTable({ key : opt.key, rows : rows.filter(function(row) { return row.id !== opt.id; }) });
+        fn.data._.write({ key : opt.key, rows : rows.filter(function(row) { return row.id !== opt.id; }) });
         fn.log('data', 'delete', opt.key, 'id=' + opt.id);
         return row;
-    };
-
-    // 5. render escape hatch -- a column can carry a JS source string instead of a fixed type,
-    // so a resource definition (pure data) can extend what a cell/field does without touching
-    // this file. Same mechanism serves both list cells and form fields.
-    fn.component._.renderColumn = function(opt) {
-        var render = new Function('return (' + opt.source + ')')();
-        return render(opt.data);
     };
 
     // 7. data/datas shape-driven dispatch -- deciding list-vs-single-value editing UI by the
@@ -256,6 +256,46 @@
         }
     });
 
+    // 7. data/datas shape-driven dispatch, applied to a textarea's own value: if it happens to
+    // hold a JSON array/object, derive read-only list columns/datas from its shape so the form
+    // can preview it without any schema declaring that the field is JSON.
+    fn.component._.jsonPreview = function(value) {
+        if (Array.isArray(value)) {
+            var keys = [];
+            value.forEach(function(item) {
+                if (item && typeof item === 'object' && !Array.isArray(item)) {
+                    Object.keys(item).forEach(function(key) {
+                        if (keys.indexOf(key) === -1) {
+                            keys.push(key);
+                        }
+                    });
+                }
+            });
+            var columns = keys.length
+                ? keys.map(function(key) { return { name : key, label : key, list : {} }; })
+                : [ { name : 'value', label : 'Value', list : {} } ];
+            var datas = value.map(function(item, index) {
+                if (item && typeof item === 'object' && !Array.isArray(item)) {
+                    var row = { id : index };
+                    keys.forEach(function(key) {
+                        var v = item[key];
+                        row[key] = (v && typeof v === 'object') ? JSON.stringify(v) : v;
+                    });
+                    return row;
+                }
+                return { id : index, value : item };
+            });
+            return { columns : columns, datas : datas };
+        }
+        return {
+            columns : [ { name : 'key', label : 'Key', list : {} }, { name : 'value', label : 'Value', list : {} } ],
+            datas : Object.keys(value).map(function(key) {
+                var v = value[key];
+                return { id : key, key : key, value : (v && typeof v === 'object') ? JSON.stringify(v) : v };
+            }),
+        };
+    };
+
     // 4 + 6. schema-driven form: resource.columns + column.form mechanically drives the fields,
     // including a resource-reference select (column.form.resource:{key,label}), a plain textarea,
     // and the render escape hatch -- no per-resource form code needed.
@@ -276,7 +316,7 @@
 
                 var input;
                 if (column.form.render) {
-                    input = fn.component._.renderColumn({ source : column.form.render, data : opt.data });
+                    input = fn.render({ source : column.form.render, data : opt.data });
                     valueCell.appendChild(input);
                 } else if (column.form.type === 'select') {
                     input = fn.element.create({ tagName : 'select', attribute : { name : column.name }, parent : valueCell });
@@ -292,9 +332,26 @@
                     input = fn.element.create({
                         tagName : 'textarea',
                         attribute : { name : column.name },
-                        style : { width : '100%', minHeight : '60px', resize : 'vertical' },
+                        style : { width : '100%', minHeight : column.form.height || '60px', resize : 'vertical' },
                         parent : valueCell,
                     });
+
+                    var parsed;
+                    try {
+                        parsed = JSON.parse(opt.data[column.name]);
+                    } catch (e) {
+                        parsed = undefined;
+                    }
+                    if (parsed !== undefined && parsed !== null && typeof parsed === 'object') {
+                        var preview = fn.component._.jsonPreview(parsed);
+                        fn.component.create({
+                            name : 'list',
+                            resource : { key : '', columns : preview.columns },
+                            datas : preview.datas,
+                            readonly : true,
+                            parent : valueCell,
+                        });
+                    }
                 } else {
                     input = fn.element.create({ tagName : 'input', attribute : { type : 'text', name : column.name }, parent : valueCell });
                 }
@@ -370,7 +427,7 @@
                     }
                     var cell = fn.element.create({ tagName : 'td', parent : row });
                     if (column.list.render) {
-                        var rendered = fn.component._.renderColumn({ source : column.list.render, data : data });
+                        var rendered = fn.render({ source : column.list.render, data : data });
                         if (rendered instanceof HTMLElement) {
                             cell.appendChild(rendered);
                         } else {

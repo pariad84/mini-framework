@@ -56,6 +56,18 @@ field needed multi-line text and mini.js had no way to express that, not specula
 time. When you hit a real gap like that, fix it in `mini.js`, then use it from `app.js` — and
 note what real need drove it in the commit message, not just what the diff does.
 
+## Staying in sync with devtool.simple
+
+`mini.js` was extracted from `fn.js` at a point in time, not linked to it — `fn.js` keeps
+evolving on its own after the extraction, and nothing here notices when it does. When you're
+about to touch `mini.js` (or asked to), first check whether the framework-layer piece you're
+touching (naming, an escape hatch, a layout) has since changed shape in `devtool.simple`'s
+`fn.js` and port that change over too, the same direction the `textarea` and `render` gaps
+were closed: read the equivalent code in `fn.js`, match its current naming/behavior exactly
+in `mini.js`'s simpler form, and don't reintroduce app-specific pieces (`devtoolExampleApp`
+concerns) that don't belong here. This is a manual, occasional check, not automatic — nothing
+enforces it, so it only happens when it's deliberately done.
+
 ## Workflow for changes
 
 1. Implement the change (in `mini.js` if it's the framework, `app.js` if it's app-specific).
