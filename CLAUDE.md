@@ -33,6 +33,11 @@ past `fn.component.create`/`fn.data.*`/`fn.element.create` to touch the DOM or s
   its job. A button finds its own context via `e.target.closest('.__popup')` /
   `.querySelector('.__form')` and acts on it directly, rather than the creator wiring up an
   `onClick`.
+- **`caller`**: the popup (or any element with a `.refresh()`) responsible for opening another
+  popup — used so `save-btn` can refresh whatever should show the new/changed row afterward.
+  `list`'s row-click auto-detects it via `.closest('.__popup')`, but a caller can also be passed
+  explicitly (`fn.component.create({ name: 'list', ..., caller: someEl })`) when the list isn't
+  inside a popup at all, e.g. a plain page section — the explicit value always wins.
 - **No CSS.** Everything is inline via `fn.element.create`'s `style` option. Don't introduce a
   `<style>` block or CSS classes for styling.
 - **No comments.** If a name needs a comment to explain it, rename it instead. The exception is

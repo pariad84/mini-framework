@@ -411,7 +411,7 @@
                             fn.component.create({
                                 name : 'popup',
                                 title : 'Edit',
-                                caller : e.target.closest('.__popup'),
+                                caller : opt.caller || e.target.closest('.__popup'),
                                 render : function(popupEl) {
                                     fn.component.create({ name : 'form', resource : opt.resource, data : data, parent : popupEl.content });
                                     fn.component.create({ name : 'save-btn', parent : popupEl.content });

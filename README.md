@@ -23,15 +23,23 @@ No build step, no dependencies. `mini.js` is the entire framework in one file.
 
 Building it against `mini.js` surfaced one real gap: the `form` layout had no `textarea` support at all (only text input, select, and the render escape hatch), which meant a "Notes" field for a task couldn't hold more than one line. That's now fixed in `mini.js` itself -- exactly the kind of thing you only find by actually building a second app, not by reasoning about the framework in the abstract.
 
+## The second example app: Recipe Box
+
+`recipes-app.js` is a small recipe manager (Categories + Recipes, with Recipes referencing a Category), laid out as an ordinary multi-page website -- a nav bar and hash-based routing (`#/`, `#/categories`, `#/recipes`) swap full page sections in and out of `document.body`, instead of Task Tracker's floating popups everywhere. `nav` and `router` are plain layouts registered with the same `fn.component.layout.set` registry `list`/`form`/`popup` use -- no framework change was needed to add routing itself.
+
+Building it surfaced one real gap: `list`'s row-click always opened its edit popup with `caller: e.target.closest('.__popup')`, so a list embedded directly in a page (not inside a popup) had no way to get refreshed after an edit. Fixed in `mini.js` by letting an explicit `caller` passed to `list` win over the auto-detected one -- again, a gap only a second real layout shape surfaced.
+
 ## Running it
 
-Serve this directory with any static file server and open `index.html`, e.g.:
+Serve this directory with any static file server, e.g.:
 
 ```
 npx serve .
 ```
 
-On load it seeds two sample projects and three sample tasks, then opens a Projects list and a Tasks list. Click a row to edit it; click a Task's checkmark/x to toggle done in place; click "Inspect notes" on a task whose notes happen to be a JSON array (see the "Review pull requests" task) to see `openValue`'s shape-driven dispatch open it as a list instead of plain text.
+Open `index.html` for Task Tracker: it seeds two sample projects and three sample tasks, then opens a Projects list and a Tasks list. Click a row to edit it; click a Task's checkmark/x to toggle done in place; click "Inspect notes" on a task whose notes happen to be a JSON array (see the "Review pull requests" task) to see `openValue`'s shape-driven dispatch open it as a list instead of plain text.
+
+Open `recipes.html` for Recipe Box: it seeds two categories and two recipes. Use the nav bar to move between Home/Categories/Recipes; click a row to edit it in a popup, or "+ New Recipe"/"+ New Category" to add one -- either way the page's own list refreshes in place, no reload or popup-within-popup needed.
 
 ## Relationship to devtool.simple
 
