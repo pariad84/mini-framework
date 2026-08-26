@@ -242,7 +242,9 @@
                         var form = popup.querySelector('.__form');
                         var data = form.getData();
                         if (form._.data.id !== undefined) {
-                            fn.data.update({ key : form._.resource.key, id : form._.data.id, data : data });
+                            var merged = Object.assign({}, form._.data, data);
+                            delete merged.id;
+                            fn.data.update({ key : form._.resource.key, id : form._.data.id, data : merged });
                         } else {
                             fn.data.insert({ key : form._.resource.key, data : data });
                         }
