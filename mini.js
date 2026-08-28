@@ -9,10 +9,6 @@
     fn.data._ = {};
     fn.element = {};
 
-    fn.log = function(scope, action, ...args) {
-        console.log('[fn.' + scope + ']', action, ...args);
-    };
-
     // 5. render escape hatch -- a column can carry a JS source string instead of a fixed type,
     // so a resource definition (pure data) can extend what a cell/field does without touching
     // this file. Same mechanism serves both list cells and form fields.
@@ -102,11 +98,8 @@
     fn.data.select = function(opt = {}) {
         var rows = fn.data._.read({ key : opt.key });
         if (opt.id !== undefined) {
-            var row = rows.find(function(row) { return row.id === opt.id; });
-            fn.log('data', 'select', opt.key, 'id=' + opt.id, row);
-            return row;
+            return rows.find(function(row) { return row.id === opt.id; });
         }
-        fn.log('data', 'select', opt.key, rows.length + ' rows', rows);
         return rows;
     };
 
@@ -116,7 +109,6 @@
         var row = { id : nextId, data : opt.data };
         rows.push(row);
         fn.data._.write({ key : opt.key, rows : rows });
-        fn.log('data', 'insert', opt.key, row);
         return row;
     };
 
@@ -127,7 +119,6 @@
             row.data = opt.data;
             fn.data._.write({ key : opt.key, rows : rows });
         }
-        fn.log('data', 'update', opt.key, 'id=' + opt.id, row);
         return row;
     };
 
@@ -135,7 +126,6 @@
         var rows = fn.data._.read({ key : opt.key });
         var row = rows.find(function(row) { return row.id === opt.id; });
         fn.data._.write({ key : opt.key, rows : rows.filter(function(row) { return row.id !== opt.id; }) });
-        fn.log('data', 'delete', opt.key, 'id=' + opt.id);
         return row;
     };
 
