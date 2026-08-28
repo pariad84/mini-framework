@@ -14,7 +14,7 @@ for later use. `fn.util.js`, also at the repo root, is different: `fn.util.selec
 `fn.util.newButton`/`fn.util.saveForm` are plain CRUD/UI-wiring logic with no reason to vary by
 example the way a layout's look does, so every example does load it. Example apps live in their
 own folders at the repo root, listed from `index.html` -- currently `crm/`, `windows-os/`,
-`android-phone/`, and `team-chat/`.
+`android-phone/`, `team-chat/`, and `prime-hunter/`.
 
 ## The three things that matter most
 
@@ -67,8 +67,8 @@ own folders at the repo root, listed from `index.html` -- currently `crm/`, `win
   `pageSize`, for any resource the app browses as a list -- `team-chat/` has none, since it
   browses channels through its own `sidebar`/`channel-item` instead); copy from
   `fn.component.layout.js` as a starting point and re-theme only what the example's look needs
-  to change (see `crm/`, `windows-os/`, `android-phone/`, `team-chat/`). Always name that
-  file `layout.js` — not `mobile-layout.js`/`desktop-chrome.js`/etc. — so every example's
+  to change (see `crm/`, `windows-os/`, `android-phone/`, `team-chat/`, `prime-hunter/`). Always
+  name that file `layout.js` — not `mobile-layout.js`/`desktop-chrome.js`/etc. — so every example's
   layouts live in a file with the same name. `form` must define `.save()` (insert-or-update
   against `fn.data`, using the form's own `el._.resource`/`el._.data` -- this is the form's
   business, not save-btn's or `fn.util.js`'s, since a real backend might need it to differ per
@@ -78,7 +78,7 @@ own folders at the repo root, listed from `index.html` -- currently `crm/`, `win
   screen closes and pass that as `fn.util.saveForm`'s `onSaved`, not re-implement the
   call-form.save()-then-refresh part.
 - **When to add to `fn.util.js`**: unlike `fn.js` (see "Adding to the framework" below), this
-  doesn't need a second real use first — the three current examples already are that. Add
+  doesn't need a second real use first — the current examples already are that. Add
   something here only when it's logic with no reason to differ between examples (compare
   `fn.util.saveForm`, which stays identical everywhere and only takes an `onSaved` callback, to
   `popup`'s styling, which is supposed to differ — that difference is exactly why `layout.js`
