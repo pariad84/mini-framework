@@ -21,18 +21,6 @@
         ],
     };
 
-    function folderDatas() {
-        return fn.data.select({ key : 'folder' }).map(function(row) {
-            return Object.assign({ id : row.id }, row.data);
-        });
-    }
-
-    function fileDatas() {
-        return fn.data.select({ key : 'file' }).map(function(row) {
-            return Object.assign({ id : row.id }, row.data);
-        });
-    }
-
     if (fn.data.select({ key : 'folder' }).length === 0) {
         var docs = fn.data.insert({ key : 'folder', data : { name : 'Documents' } });
         var pics = fn.data.insert({ key : 'folder', data : { name : 'Pictures' } });
@@ -40,38 +28,17 @@
         fn.data.insert({ key : 'file', data : { name : 'vacation.jpg', folderId : pics.id, content : '' } });
     }
 
-    function newButton(opt) {
-        return fn.element.create({
-            tagName : 'button',
-            attribute : { type : 'button' },
-            text : opt.text,
-            style : { padding : '6px 14px', marginBottom : '10px' },
-            parent : opt.parent,
-            event : {
-                click : function() {
-                    fn.component.create({
-                        name : 'popup',
-                        title : opt.title,
-                        caller : opt.caller,
-                        render : function(popupEl) {
-                            fn.component.create({ name : 'form', resource : opt.resource, data : {}, parent : popupEl.content });
-                            fn.component.create({ name : 'save-btn', parent : popupEl.content });
-                        },
-                    });
-                }
-            },
-        });
-    }
+    var newButtonStyle = { padding : '6px 14px', marginBottom : '10px' };
 
     function openFolders() {
         fn.component.create({
             name : 'popup',
             title : 'Folders',
             render : function(popupEl) {
-                newButton({ text : '+ New Folder', title : 'New Folder', resource : folderResource, caller : popupEl, parent : popupEl.content });
+                fn.util.newButton({ text : '+ New Folder', title : 'New Folder', resource : folderResource, caller : popupEl, parent : popupEl.content, style : newButtonStyle });
                 var listContainer = fn.element.create({ tagName : 'div', parent : popupEl.content });
                 popupEl.refresh = function() {
-                    fn.component.refresh({ name : 'list', resource : folderResource, datas : folderDatas(), caller : popupEl, parent : listContainer });
+                    fn.component.refresh({ name : 'list', resource : folderResource, datas : fn.util.selectFlat({ key : 'folder' }), caller : popupEl, parent : listContainer });
                 };
                 popupEl.refresh();
             },
@@ -83,10 +50,10 @@
             name : 'popup',
             title : 'Files',
             render : function(popupEl) {
-                newButton({ text : '+ New File', title : 'New File', resource : fileResource, caller : popupEl, parent : popupEl.content });
+                fn.util.newButton({ text : '+ New File', title : 'New File', resource : fileResource, caller : popupEl, parent : popupEl.content, style : newButtonStyle });
                 var listContainer = fn.element.create({ tagName : 'div', parent : popupEl.content });
                 popupEl.refresh = function() {
-                    fn.component.refresh({ name : 'list', resource : fileResource, datas : fileDatas(), caller : popupEl, parent : listContainer });
+                    fn.component.refresh({ name : 'list', resource : fileResource, datas : fn.util.selectFlat({ key : 'file' }), caller : popupEl, parent : listContainer });
                 };
                 popupEl.refresh();
             },

@@ -216,20 +216,10 @@
                 text : 'Save',
                 style : { padding : '6px 16px', marginTop : '10px' },
                 event : { click : function(e) {
-                    var popup = e.target.closest('.__popup');
-                    var form = popup.querySelector('.__form');
-                    var data = form.getData();
-                    if (form._.data.id !== undefined) {
-                        var merged = Object.assign({}, form._.data, data);
-                        delete merged.id;
-                        fn.data.update({ key : form._.resource.key, id : form._.data.id, data : merged });
-                    } else {
-                        fn.data.insert({ key : form._.resource.key, data : data });
-                    }
-                    if (popup._.caller) {
-                        popup._.caller.refresh();
-                    }
-                    closeWindow(popup);
+                    fn.util.saveForm({
+                        popup : e.target.closest('.__popup'),
+                        onSaved : closeWindow,
+                    });
                 } },
             });
         }

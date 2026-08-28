@@ -32,18 +32,6 @@
         ],
     };
 
-    function contactDatas() {
-        return fn.data.select({ key : 'contact' }).map(function(row) {
-            return Object.assign({ id : row.id }, row.data);
-        });
-    }
-
-    function dealDatas() {
-        return fn.data.select({ key : 'deal' }).map(function(row) {
-            return Object.assign({ id : row.id }, row.data);
-        });
-    }
-
     if (fn.data.select({ key : 'stage' }).length === 0) {
         [ 'Lead', 'Contacted', 'Won', 'Lost' ].forEach(function(name) {
             fn.data.insert({ key : 'stage', data : { name : name } });
@@ -61,38 +49,17 @@
         fn.data.insert({ key : 'deal', data : { title : 'Annual support contract', contactId : globex.id, stageId : stageByName['Lead'], value : '9600' } });
     }
 
-    function newButton(opt) {
-        return fn.element.create({
-            tagName : 'button',
-            attribute : { type : 'button' },
-            text : opt.text,
-            style : { padding : '14px 18px', marginBottom : '16px', fontSize : '16px', width : '100%' },
-            parent : opt.parent,
-            event : {
-                click : function() {
-                    fn.component.create({
-                        name : 'popup',
-                        title : opt.title,
-                        caller : opt.caller,
-                        render : function(popupEl) {
-                            fn.component.create({ name : 'form', resource : opt.resource, data : {}, parent : popupEl.content });
-                            fn.component.create({ name : 'save-btn', parent : popupEl.content });
-                        },
-                    });
-                }
-            },
-        });
-    }
+    var newButtonStyle = { padding : '14px 18px', marginBottom : '16px', fontSize : '16px', width : '100%' };
 
     fn.component.layout.set({
         name : 'contacts-page',
         layout : function() {
             var page = fn.element.create({ tagName : 'div', style : { padding : '16px', paddingBottom : '100px' } });
             fn.element.create({ tagName : 'h1', text : 'Contacts', style : { fontSize : '20px' }, parent : page });
-            newButton({ text : '+ New Contact', title : 'New Contact', resource : contactResource, caller : page, parent : page });
+            fn.util.newButton({ text : '+ New Contact', title : 'New Contact', resource : contactResource, caller : page, parent : page, style : newButtonStyle });
             var listContainer = fn.element.create({ tagName : 'div', parent : page });
             page.refresh = function() {
-                fn.component.refresh({ name : 'list', resource : contactResource, datas : contactDatas(), caller : page, parent : listContainer });
+                fn.component.refresh({ name : 'list', resource : contactResource, datas : fn.util.selectFlat({ key : 'contact' }), caller : page, parent : listContainer });
             };
             page.refresh();
             return page;
@@ -104,10 +71,10 @@
         layout : function() {
             var page = fn.element.create({ tagName : 'div', style : { padding : '16px', paddingBottom : '100px' } });
             fn.element.create({ tagName : 'h1', text : 'Deals', style : { fontSize : '20px' }, parent : page });
-            newButton({ text : '+ New Deal', title : 'New Deal', resource : dealResource, caller : page, parent : page });
+            fn.util.newButton({ text : '+ New Deal', title : 'New Deal', resource : dealResource, caller : page, parent : page, style : newButtonStyle });
             var listContainer = fn.element.create({ tagName : 'div', parent : page });
             page.refresh = function() {
-                fn.component.refresh({ name : 'list', resource : dealResource, datas : dealDatas(), caller : page, parent : listContainer });
+                fn.component.refresh({ name : 'list', resource : dealResource, datas : fn.util.selectFlat({ key : 'deal' }), caller : page, parent : listContainer });
             };
             page.refresh();
             return page;

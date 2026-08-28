@@ -15,7 +15,10 @@ essentials #4, #6, #7 are conventions (schema-driven `form`/`list`, resource-ref
 `opt`-based self-contained components) that every app implements for itself, the same shape each
 time. `fn.component.layout.js`, also at the repo root, is a reference implementation of
 `popup`/`close-btn`/`save-btn`/`form`/`list`/`pagination` built that way -- not a dependency any
-example currently loads, kept here for later use.
+example currently loads, kept here for later use. `fn.util.js` is different: it's plain CRUD/UI
+logic (`fn.util.selectFlat`, `fn.util.newButton`, `fn.util.saveForm`) that has no reason to vary
+between examples the way `popup`'s look does, so every example does load it, rather than
+re-typing the same logic into its own `app.js`/`layout.js`.
 
 ## Design history
 
@@ -25,10 +28,11 @@ This framework's shape was validated against two throwaway example apps -- a flo
 - `list`'s row-click always opened its edit popup with `caller: e.target.closest('.__popup')`, so a list embedded directly in a page (not inside a popup) had no way to get refreshed after an edit -- fixed by letting an explicit `caller` passed to `list` win over the auto-detected one.
 - Every popup's/page's own `.refresh()` had to hand-clear its container's children before recreating the list inside it, reaching past `fn.component.create` into raw DOM (`.children`, `.remove()`) -- fixed by adding `fn.component.refresh`, so `.refresh()` implementations only ever call back into the framework.
 - `list` had no way to page through a resource with more than a handful of rows -- fixed by adding a `pagination` layout paired with `list` (list slices its own `datas` by `opt.pageSize` and keeps the current page on its own `.__list` wrapper; `pagination`'s Prev/Next buttons find that wrapper via `.closest('.__list')`, the same self-contained convention `close-btn`/`save-btn` already used, instead of `list` handing them a callback).
+- Once three examples existed, the same CRUD logic (a `save-btn`'s insert-or-update-then-refresh, the "+ New X" button that opens a blank form, and `fn.data.select(...).map(...)` flattened into `{id, ...data}`) was typed out nearly verbatim in each one -- a real, not hypothetical, duplication that had already caused a bug (a stringified `"undefined"` `disabled` attribute, copy-adjusted wrong in one of the three copies). Fixed by adding `fn.util.js`: unlike `fn.component.layout.js`, this one every example does load, since none of this logic has a reason to differ by theme the way `popup`'s look does.
 
 ## Using it
 
-Load `fn.js` as a plain `<script>` tag before your app's own script(s) -- it attaches to the global `fn` object, no build step needed. `fn.js` alone doesn't give you `popup`/`form`/`list`/etc. -- write your own `layout.js` registering the ones you need (see any example folder), or start from `fn.component.layout.js` as a reference.
+Load `fn.js` as a plain `<script>` tag before your app's own script(s) -- it attaches to the global `fn` object, no build step needed. `fn.js` alone doesn't give you `popup`/`form`/`list`/etc. -- write your own `layout.js` registering the ones you need (see any example folder), or start from `fn.component.layout.js` as a reference. `fn.util.js` (load it after `fn.js`, before your `layout.js`/`app.js`) has `fn.util.selectFlat`/`fn.util.newButton`/`fn.util.saveForm` -- optional, but every current example uses it rather than re-implementing the same CRUD wiring.
 
 ## Examples
 
@@ -38,7 +42,7 @@ Load `fn.js` as a plain `<script>` tag before your app's own script(s) -- it att
 - `windows-os/` -- a Folders + Files file manager (Files referencing a Folder), styled as a Windows-OS-style desktop: draggable/resizable/minimizable/maximizable windows, a taskbar with running-window buttons and a clock, and a Start menu, all in `layout.js`. `popup`/`close-btn`/`save-btn` plus new app-only layouts (`desktop`, `taskbar`, `taskbar-windows`, `clock`, `start-menu`, `desktop-icon`, `minimize-btn`, `maximize-btn`) are Windows-OS-styled; `form`/`list`/`pagination` are unchanged from the reference implementation. Exactly the UI chrome CLAUDE.md calls out of scope for the framework itself (popup dragging/resizing, z-index, cascading position).
 - `android-phone/` -- Contacts + Notes (Notes referencing a Contact), styled as an Android phone screen filling the whole viewport (no device bezel -- a status bar, a home screen of tappable icons, full-screen app views, and a 3-button nav bar (Back/Home/Recents) with real back-stack navigation), all in `layout.js`. Same shape again (`popup`/`close-btn`/`save-btn` plus `phone`/`home-screen`/`app-icon`/`nav-bar`/`status-clock` themed, `form`/`list`/`pagination` unchanged); `close-btn` becomes the in-app-bar back arrow, and both it and the nav bar's Back button pop the same screen stack.
 
-Every example defines every layout it needs (`popup`/`close-btn`/`save-btn`/`form`/`list`/`pagination` at minimum) in its own `layout.js`, loaded right after `fn.js` and before `app.js` -- none of them load `fn.component.layout.js`, which is itself just a reference implementation of those same layouts, not a framework dependency (see "Example folder structure" in CLAUDE.md).
+Every example defines every layout it needs (`popup`/`close-btn`/`save-btn`/`form`/`list`/`pagination` at minimum) in its own `layout.js`, loaded right after `fn.util.js` and before `app.js` -- none of them load `fn.component.layout.js`, which is itself just a reference implementation of those same layouts, not a framework dependency (see "Example folder structure" in CLAUDE.md). All three do load `fn.util.js`: `save-btn` calls `fn.util.saveForm`, passing only how that example's chrome closes (`popup.remove()` in `crm/`, `closeWindow` in `windows-os/`, `popScreen` in `android-phone/`); `app.js`'s add-buttons and resource-list-fetching both go through `fn.util.newButton`/`fn.util.selectFlat` instead of each defining its own.
 
 ## Known limitation: swapping to a real network backend isn't free
 
