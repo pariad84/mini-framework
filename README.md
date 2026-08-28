@@ -36,7 +36,7 @@ Load `fn.js` then `fn.component.layout.set.js` as plain `<script>` tags, in that
 
 `index.html` at the repo root lists every example app, each in its own folder next to it. Open it (serve the directory, e.g. `npx serve .`) to browse them:
 
-- `crm/` -- Contacts + Deals, mobile-oriented (bottom tab bar, full-width touch-sized buttons), with Deals referencing both a Contact and a Stage (Stage is itself a seeded resource, so a fixed set of choices needs no framework change).
+- `crm/` -- Contacts + Deals, mobile-oriented (bottom tab bar, full-width touch-sized buttons), with Deals referencing both a Contact and a Stage (Stage is itself a seeded resource, so a fixed set of choices needs no framework change). Its `mobile-layout.js` re-registers `popup`/`close-btn`/`save-btn`/`form` with mobile-appropriate styling (full-screen modal instead of a small fixed-position box, 16px inputs, bigger tap targets) -- registering the same layout names again through `fn.component.layout.set` overrides the framework's defaults entirely from within the example folder, no framework file touched.
 
 ## Known limitation: swapping to a real network backend isn't free
 
