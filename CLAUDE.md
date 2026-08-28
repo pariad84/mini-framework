@@ -10,8 +10,8 @@ Together they know nothing about any specific app, the way `frameworkCore`/`fram
 sit under `devtoolExampleApp` in devtool.simple. The split is a hard rule: the framework files
 must never reference anything app-specific (a resource key, a field name, a UI label), and any
 app built on top must never reach past `fn.component.create`/`fn.data.*`/`fn.element.create` to
-touch the DOM or storage directly. There is currently no example app in this repo -- see
-"Adding to the framework" below for what that means before changing anything here.
+touch the DOM or storage directly. Example apps live in their own folders at the repo root,
+listed from `index.html` -- currently `crm/`.
 
 ## The three things that matter most
 
@@ -61,19 +61,20 @@ touch the DOM or storage directly. There is currently no example app in this rep
 
 Don't add a capability to the framework files because a hypothetical app might need it — add it
 because a real app built on this actually needed it and the framework was missing it (see
-README.md's "Design history" for the model cases this already produced). There's no example app
-in this repo right now, so a change here needs a throwaway app built to exercise it first — fix
-the framework once that app hits a real gap, then use the fix from that app, and note what real
-need drove it in the commit message, not just what the diff does.
+README.md's "Design history" for the model cases this already produced). If none of the example
+apps under the repo root actually exercise the gap you're worried about, build a throwaway app
+that does (or extend an existing one) before touching the framework — fix the framework once
+that app hits a real gap, then use the fix from that app, and note what real need drove it in
+the commit message, not just what the diff does.
 
 ## Workflow for changes
 
 1. Implement the change (in `fn.js`/`fn.component.layout.set.js` if it's the framework, or in
    whatever app you're building on top of it if it's app-specific).
 2. `node --check` on every file you touched, to catch syntax errors.
-3. Verify in an actual browser (Playwright). There's no example app or HTML page in this repo
-   right now, so build a scratch page that loads `fn.js` then `fn.component.layout.set.js`
-   and exercises the change directly, and drive it with Playwright — check the result (DOM
-   state, localStorage). This project has no committed test suite, so this is the only real
+3. Verify in an actual browser (Playwright) — load the relevant example's HTML file (e.g.
+   `crm/index.html`), or build a scratch page loading `fn.js` then `fn.component.layout.set.js`
+   if no example covers it, and drive it with Playwright — check the result (DOM state,
+   localStorage). This project has no committed test suite, so this is the only real
    verification available before committing.
 4. Commit and push.
