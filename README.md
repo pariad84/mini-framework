@@ -10,10 +10,12 @@ A minimal, schema-driven CRUD framework built around seven essentials:
 6. A resource-reference field (`column.form.resource: {key, label}`) -- a select whose options come from another resource's rows, auto-resolved to a label everywhere it's displayed.
 7. The `opt` single-parameter convention, and self-contained components that find their own context via `.closest('.__popup')` / `.querySelector('.__form')` instead of caller-injected callbacks.
 
-No build step, no dependencies. The framework is two plain `<script>` files loaded in order:
-`fn.js` (the core -- essentials #1-3, #5) and `fn.component.layout.set.js` (the
-`popup`/`close-btn`/`save-btn`/`form`/`list` layouts it registers, essentials #4, #6, #7). Both
-attach to the same global `fn` object; there's nothing to import or bundle.
+No build step, no dependencies. The framework is one file, `fn.js` (essentials #1-3, #5) --
+essentials #4, #6, #7 are conventions (schema-driven `form`/`list`, resource-reference selects,
+`opt`-based self-contained components) that every app implements for itself, the same shape each
+time. `fn.component.layout.js`, also at the repo root, is a reference implementation of
+`popup`/`close-btn`/`save-btn`/`form`/`list`/`pagination` built that way -- not a dependency any
+example currently loads, kept here for later use.
 
 ## Design history
 
@@ -26,17 +28,17 @@ This framework's shape was validated against two throwaway example apps -- a flo
 
 ## Using it
 
-Load `fn.js` then `fn.component.layout.set.js` as plain `<script>` tags, in that order, before your app's own script -- both attach to the same global `fn`, no build step needed.
+Load `fn.js` as a plain `<script>` tag before your app's own script(s) -- it attaches to the global `fn` object, no build step needed. `fn.js` alone doesn't give you `popup`/`form`/`list`/etc. -- write your own `layout.js` registering the ones you need (see any example folder), or start from `fn.component.layout.js` as a reference.
 
 ## Examples
 
 `index.html` at the repo root lists every example app, each in its own folder next to it. Open it (serve the directory, e.g. `npx serve .`) to browse them:
 
-- `crm/` -- Contacts + Deals, mobile-oriented (bottom tab bar, full-width touch-sized buttons), with Deals referencing both a Contact and a Stage (Stage is itself a seeded resource, so a fixed set of choices needs no framework change). Its `layout.js` defines mobile-appropriate `popup`/`close-btn`/`save-btn`/`form` (full-screen modal instead of a small fixed-position box, 16px inputs, bigger tap targets) plus `list`/`pagination` unchanged from `fn.component.layout.set.js`'s reference implementation.
+- `crm/` -- Contacts + Deals, mobile-oriented (bottom tab bar, full-width touch-sized buttons), with Deals referencing both a Contact and a Stage (Stage is itself a seeded resource, so a fixed set of choices needs no framework change). Its `layout.js` defines mobile-appropriate `popup`/`close-btn`/`save-btn`/`form` (full-screen modal instead of a small fixed-position box, 16px inputs, bigger tap targets) plus `list`/`pagination` unchanged from `fn.component.layout.js`'s reference implementation.
 - `windows-os/` -- a Folders + Files file manager (Files referencing a Folder), styled as a Windows-OS-style desktop: draggable/resizable/minimizable/maximizable windows, a taskbar with running-window buttons and a clock, and a Start menu, all in `layout.js`. `popup`/`close-btn`/`save-btn` plus new app-only layouts (`desktop`, `taskbar`, `taskbar-windows`, `clock`, `start-menu`, `desktop-icon`, `minimize-btn`, `maximize-btn`) are Windows-OS-styled; `form`/`list`/`pagination` are unchanged from the reference implementation. Exactly the UI chrome CLAUDE.md calls out of scope for the framework itself (popup dragging/resizing, z-index, cascading position).
 - `android-phone/` -- Contacts + Notes (Notes referencing a Contact), styled as an Android phone: a device frame with a status bar, a home screen of tappable icons, full-screen app views, and a 3-button nav bar (Back/Home/Recents) with real back-stack navigation, all in `layout.js`. Same shape again (`popup`/`close-btn`/`save-btn` plus `phone`/`home-screen`/`app-icon`/`nav-bar`/`status-clock` themed, `form`/`list`/`pagination` unchanged); `close-btn` becomes the in-app-bar back arrow, and both it and the nav bar's Back button pop the same screen stack.
 
-Every example defines every layout it needs (`popup`/`close-btn`/`save-btn`/`form`/`list`/`pagination` at minimum) in its own `layout.js`, loaded right after `fn.js` and before `app.js` -- none of them load `fn.component.layout.set.js`, which is itself just a reference implementation of those same layouts, not a framework dependency (see "Example folder structure" in CLAUDE.md).
+Every example defines every layout it needs (`popup`/`close-btn`/`save-btn`/`form`/`list`/`pagination` at minimum) in its own `layout.js`, loaded right after `fn.js` and before `app.js` -- none of them load `fn.component.layout.js`, which is itself just a reference implementation of those same layouts, not a framework dependency (see "Example folder structure" in CLAUDE.md).
 
 ## Known limitation: swapping to a real network backend isn't free
 

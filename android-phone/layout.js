@@ -1,5 +1,5 @@
 // This example's own popup/close-btn/save-btn/form/list/pagination, plus its Android-phone-only
-// layouts -- fn.component.layout.set.js is itself just one reference implementation of these,
+// layouts -- fn.component.layout.js is itself just one reference implementation of these,
 // not a dependency every example must load, so this file defines every layout the app below
 // needs directly, via the same fn.component.layout.set registry. popup/close-btn/save-btn are
 // Android-phone-style (a device frame, status bar, home screen with tappable icons, a 3-button
