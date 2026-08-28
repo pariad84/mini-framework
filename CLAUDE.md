@@ -56,6 +56,12 @@ listed from `index.html` -- currently `crm/`, `windows-os/`, and `android-phone/
   (`fn.element.create`, the layout registry, `fn.data.*`) before the escape hatch (`render`).
   Within `fn.component.layout.set.js`: `popup` first (everything else's layouts reference its
   `.__popup` convention) before `close-btn`/`save-btn` before `form`/`list`.
+- **Example folder structure**: `index.html` + `app.js` (the domain -- resources, seed data,
+  launch code) always; add `layout.js` (loaded after `fn.component.layout.set.js`, before
+  `app.js`) only if the example re-registers `popup`/`close-btn`/`save-btn`/etc. for its own
+  visual theme (see `crm/`, `windows-os/`, `android-phone/`). Always name that file `layout.js`
+  — not `mobile-layout.js`/`desktop-chrome.js`/etc. — so every example's chrome override lives
+  in a file with the same name.
 
 ## Adding to the framework
 

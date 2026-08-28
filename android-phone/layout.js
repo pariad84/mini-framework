@@ -1,10 +1,10 @@
 // Android-phone-style chrome for this example only -- a device frame, status bar, home screen
 // with tappable icons, a 3-button nav bar, and full-screen app views with back-stack navigation
 // are all app-specific UI chrome, the same category CLAUDE.md calls out of scope for the
-// framework (see windows-os/desktop-chrome.js for the desktop-OS equivalent of this same
-// override technique). Re-registers popup/close-btn/save-btn through the same
-// fn.component.layout.set registry; adds new app-only layouts (phone, home-screen, app-icon,
-// nav-bar, status-clock). No framework file is touched.
+// framework (see windows-os/layout.js for the desktop-OS equivalent of this same override
+// technique). Re-registers popup/close-btn/save-btn through the same fn.component.layout.set
+// registry; adds new app-only layouts (phone, home-screen, app-icon, nav-bar, status-clock).
+// No framework file is touched.
 (function() {
     var fn = window.fn;
 
