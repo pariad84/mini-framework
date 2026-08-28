@@ -13,8 +13,8 @@ conventions -- not a framework file and not a dependency any example currently l
 for later use. `fn.util.js`, also at the repo root, is different: `fn.util.selectFlat`/
 `fn.util.newButton`/`fn.util.saveForm` are plain CRUD/UI-wiring logic with no reason to vary by
 example the way a layout's look does, so every example does load it. Example apps live in their
-own folders at the repo root, listed from `index.html` -- currently `crm/`, `windows-os/`, and
-`android-phone/`.
+own folders at the repo root, listed from `index.html` -- currently `crm/`, `windows-os/`,
+`android-phone/`, and `team-chat/`.
 
 ## The three things that matter most
 
@@ -63,9 +63,11 @@ own folders at the repo root, listed from `index.html` -- currently `crm/`, `win
 - **Example folder structure**: `index.html` + `layout.js` + `app.js`, always, loaded in that
   order after `fn.js` and `fn.util.js`. `fn.js` alone doesn't register any layouts, so
   `layout.js` must define every one the app needs -- at minimum
-  `popup`/`close-btn`/`save-btn`/`form`/`list` (and `pagination`, if a list can grow past
-  `pageSize`); copy from `fn.component.layout.js` as a starting point and re-theme only what the
-  example's look needs to change (see `crm/`, `windows-os/`, `android-phone/`). Always name that
+  `popup`/`close-btn`/`save-btn`/`form` (plus `list`, and `pagination` if a list can grow past
+  `pageSize`, for any resource the app browses as a list -- `team-chat/` has none, since it
+  browses channels through its own `sidebar`/`channel-item` instead); copy from
+  `fn.component.layout.js` as a starting point and re-theme only what the example's look needs
+  to change (see `crm/`, `windows-os/`, `android-phone/`, `team-chat/`). Always name that
   file `layout.js` — not `mobile-layout.js`/`desktop-chrome.js`/etc. — so every example's
   layouts live in a file with the same name. `form` must define `.save()` (insert-or-update
   against `fn.data`, using the form's own `el._.resource`/`el._.data` -- this is the form's
