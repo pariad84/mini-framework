@@ -1,12 +1,13 @@
 # mini-framework
 
 A minimal, schema-driven CRUD framework distilled from [devtool.simple](https://github.com/pariad84/devtool.simple)'s
-`fn.js` down to eight essentials (see README.md for the list). `mini.js` is the framework, and
-knows nothing about any specific app. `app.js` (currently a small Task Tracker) is an example
-app built on top of it, the way `devtoolExampleApp` sits on top of `frameworkCore`/
-`frameworkLayouts` in devtool.simple. The split is a hard rule: `mini.js` must never reference
-anything app-specific (a resource key, a field name, a UI label), and `app.js` must never reach
-past `fn.component.create`/`fn.data.*`/`fn.element.create` to touch the DOM or storage directly.
+`fn.js` down to eight essentials (see README.md for the list). `mini.js` (at the repo root) is
+the framework, and knows nothing about any specific app. Each example app lives in its own
+folder next to it -- `task-tracker/app.js` and `recipe-box/recipes-app.js` -- the way
+`devtoolExampleApp` sits on top of `frameworkCore`/`frameworkLayouts` in devtool.simple. The
+split is a hard rule: `mini.js` must never reference anything app-specific (a resource key, a
+field name, a UI label), and an example app must never reach past
+`fn.component.create`/`fn.data.*`/`fn.element.create` to touch the DOM or storage directly.
 
 ## The three things that matter most
 
@@ -77,7 +78,8 @@ enforces it, so it only happens when it's deliberately done.
 
 1. Implement the change (in `mini.js` if it's the framework, `app.js` if it's app-specific).
 2. `node --check mini.js` / `node --check app.js` to catch syntax errors.
-3. Verify in an actual browser (Playwright) — load `index.html`, drive the interaction, check
-   the result (DOM state, localStorage). This project has no committed test suite, so this is
+3. Verify in an actual browser (Playwright) — load the relevant example's HTML file (e.g.
+   `task-tracker/index.html`), drive the interaction, check the result (DOM state, localStorage).
+   This project has no committed test suite, so this is
    the only real verification available before committing.
 4. Commit and push.
