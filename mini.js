@@ -129,47 +129,9 @@
         return row;
     };
 
-    // 7. data/datas shape-driven dispatch -- deciding list-vs-single-value editing UI by the
-    // actual VALUE's shape (Array.isArray), not a declared type. Lets one function open
-    // anything: a plain field or a nested collection, however deep, with no schema needed.
-    fn.component._.openValue = function(opt = {}) {
-        if (Array.isArray(opt.value)) {
-            fn.component.create({
-                name : 'popup',
-                title : opt.title || 'List',
-                parent : document.body,
-                caller : opt.caller,
-                render : function(el) {
-                    fn.component.create({
-                        name : 'list',
-                        resource : { key : '', columns : [ { name : 'value', label : 'Value', list : { type : 'text' } } ] },
-                        datas : opt.value.map(function(value, i) { return { id : i, value : value }; }),
-                        readonly : true,
-                        parent : el.content,
-                    });
-                },
-            });
-        } else {
-            fn.component.create({
-                name : 'popup',
-                title : opt.title || 'Value',
-                parent : document.body,
-                caller : opt.caller,
-                render : function(el) {
-                    fn.element.create({
-                        tagName : 'textarea',
-                        style : { width : '100%', minHeight : '80px' },
-                        text : String(opt.value),
-                        parent : el.content,
-                    });
-                },
-            });
-        }
-    };
-
-    // 7. data/datas shape-driven dispatch, applied to a textarea's own value: if it happens to
-    // hold a JSON array/object, derive read-only list columns/datas from its shape so the form
-    // can preview it without any schema declaring that the field is JSON.
+    // Used by the schema-driven form (essential #4): if a textarea's own value happens to hold
+    // a JSON array/object, derive read-only list columns/datas from its shape so the form can
+    // preview it without any schema declaring that the field is JSON.
     fn.component._.jsonPreview = function(value) {
         if (Array.isArray(value)) {
             var keys = [];

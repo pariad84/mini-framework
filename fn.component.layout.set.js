@@ -1,7 +1,7 @@
 (function() {
     var fn = window.fn;
 
-    // 8. opt convention + self-contained components: every layout takes one `opt` object, and
+    // 7. opt convention + self-contained components: every layout takes one `opt` object, and
     // buttons below find their own popup/form via .closest('.__popup')/.querySelector('.__form')
     // instead of a caller-injected onClick.
     fn.component.layout.set({

@@ -1,17 +1,16 @@
 # mini-framework
 
 A minimal, schema-driven CRUD framework distilled from [devtool.simple](https://github.com/pariad84/devtool.simple)'s
-`fn.js` down to eight essentials (see README.md for the list). The framework is two files at the
+`fn.js` down to seven essentials (see README.md for the list). The framework is two files at the
 repo root, loaded as plain `<script>` tags in this order: `mini.js` (the core primitives --
-`fn.element.create`, the layout registry, `fn.data.*`, `render`, `openValue`) and
-`fn.component.layout.set.js` (the `popup`/`close-btn`/`save-btn`/`form`/`list` layouts it
-registers on top of that core). Together they know nothing about any specific app. Each example
-app lives in its own folder next to them -- `task-tracker/app.js` and
-`recipe-box/recipes-app.js` -- the way `devtoolExampleApp` sits on top of
-`frameworkCore`/`frameworkLayouts` in devtool.simple. The split is a hard rule: the framework
-files must never reference anything app-specific (a resource key, a field name, a UI label),
-and an example app must never reach past `fn.component.create`/`fn.data.*`/`fn.element.create`
-to touch the DOM or storage directly.
+`fn.element.create`, the layout registry, `fn.data.*`, `render`) and `fn.component.layout.set.js`
+(the `popup`/`close-btn`/`save-btn`/`form`/`list` layouts it registers on top of that core).
+Together they know nothing about any specific app, the way `frameworkCore`/`frameworkLayouts`
+sit under `devtoolExampleApp` in devtool.simple. The split is a hard rule: the framework files
+must never reference anything app-specific (a resource key, a field name, a UI label), and any
+app built on top must never reach past `fn.component.create`/`fn.data.*`/`fn.element.create` to
+touch the DOM or storage directly. There is currently no example app in this repo -- see
+"Adding to the framework" below for what that means before changing anything here.
 
 ## The three things that matter most
 
@@ -22,12 +21,12 @@ to touch the DOM or storage directly.
    layout name, the visible label, and the log output should all describe the same concept
    the same way.
 3. **Stay minimal.** This project's entire point is to be small enough to read in one sitting.
-   A feature only belongs in `mini.js` if it's needed to keep the eight essentials genuinely
-   usable — UI chrome (popup dragging/resizing, z-index auto-detection, scale/opacity
-   settings, cascading popup position off a caller) is explicitly out of scope; devtool.simple
-   already proved those are "the example app," not "the framework." When in doubt, build it
-   in `app.js` first — only promote something into `mini.js` once a second real use needs it
-   too (see "Adding to the framework" below).
+   A feature only belongs in `mini.js`/`fn.component.layout.set.js` if it's needed to keep the
+   seven essentials genuinely usable — UI chrome (popup dragging/resizing, z-index
+   auto-detection, scale/opacity settings, cascading popup position off a caller) is explicitly
+   out of scope; devtool.simple already proved those are "the example app," not "the
+   framework." When in doubt, build it in a throwaway app first — only promote something into
+   the framework once a second real use needs it too (see "Adding to the framework" below).
 
 ## Conventions
 
@@ -46,7 +45,7 @@ to touch the DOM or storage directly.
 - **No CSS.** Everything is inline via `fn.element.create`'s `style` option. Don't introduce a
   `<style>` block or CSS classes for styling.
 - **No comments.** If a name needs a comment to explain it, rename it instead. The exception is
-  a comment marking which of the eight essentials a piece of code is (see the numbered
+  a comment marking which of the seven essentials a piece of code is (see the numbered
   comments already in `mini.js`/`fn.component.layout.set.js`) — keep those in sync if you
   reorder or rename things.
 - **English only** for UI text, titles, labels, and log output.
@@ -54,38 +53,41 @@ to touch the DOM or storage directly.
   devtool.simple. Don't introduce a different verb set (`get`/`fetch`/`remove`/etc.) for the
   same concept.
 - **File order**: most foundational first, most composed last. Within `mini.js`: primitives
-  (`fn.element.create`, the layout registry, `fn.data.*`) before the escape hatches (`render`,
-  `openValue`). Within `fn.component.layout.set.js`: `popup` first (everything else's layouts
-  reference its `.__popup` convention) before `close-btn`/`save-btn` before `form`/`list`.
+  (`fn.element.create`, the layout registry, `fn.data.*`) before the escape hatch (`render`).
+  Within `fn.component.layout.set.js`: `popup` first (everything else's layouts reference its
+  `.__popup` convention) before `close-btn`/`save-btn` before `form`/`list`.
 
 ## Adding to the framework
 
-Don't add a capability to `mini.js` because a hypothetical app might need it — add it because
-`app.js` (or some other real app built on this) actually needed it and mini.js was missing it.
-The `textarea` form type is the model case: it was added because the Task Tracker's "Notes"
-field needed multi-line text and mini.js had no way to express that, not speculatively ahead of
-time. When you hit a real gap like that, fix it in `mini.js`, then use it from `app.js` — and
+Don't add a capability to the framework files because a hypothetical app might need it — add it
+because a real app built on this actually needed it and the framework was missing it. The
+`textarea` form type is the model case: it was added because an earlier example app's "Notes"
+field needed multi-line text and the framework had no way to express that, not speculatively
+ahead of time. There's no example app in this repo right now (see README.md's "Design history"
+for the ones that used to validate it), so a change here needs a throwaway app built to exercise
+it first — fix the framework once that app hits a real gap, then use the fix from that app, and
 note what real need drove it in the commit message, not just what the diff does.
 
 ## Staying in sync with devtool.simple
 
-`mini.js` was extracted from `fn.js` at a point in time, not linked to it — `fn.js` keeps
+The framework was extracted from `fn.js` at a point in time, not linked to it — `fn.js` keeps
 evolving on its own after the extraction, and nothing here notices when it does. When you're
-about to touch `mini.js` (or asked to), first check whether the framework-layer piece you're
-touching (naming, an escape hatch, a layout) has since changed shape in `devtool.simple`'s
-`fn.js` and port that change over too, the same direction the `textarea` and `render` gaps
-were closed: read the equivalent code in `fn.js`, match its current naming/behavior exactly
-in `mini.js`'s simpler form, and don't reintroduce app-specific pieces (`devtoolExampleApp`
-concerns) that don't belong here. This is a manual, occasional check, not automatic — nothing
-enforces it, so it only happens when it's deliberately done.
+about to touch `mini.js` or `fn.component.layout.set.js` (or asked to), first check whether the
+framework-layer piece you're touching (naming, an escape hatch, a layout) has since changed
+shape in `devtool.simple`'s `fn.js` and port that change over too, the same direction the
+`textarea` and `render` gaps were closed: read the equivalent code in `fn.js`, match its current
+naming/behavior exactly in this simpler form, and don't reintroduce app-specific pieces
+(`devtoolExampleApp` concerns) that don't belong here. This is a manual, occasional check, not
+automatic — nothing enforces it, so it only happens when it's deliberately done.
 
 ## Workflow for changes
 
-1. Implement the change (in `mini.js`/`fn.component.layout.set.js` if it's the framework,
-   `app.js` if it's app-specific).
+1. Implement the change (in `mini.js`/`fn.component.layout.set.js` if it's the framework, or in
+   whatever app you're building on top of it if it's app-specific).
 2. `node --check` on every file you touched, to catch syntax errors.
-3. Verify in an actual browser (Playwright) — load the relevant example's HTML file (e.g.
-   `task-tracker/index.html`), drive the interaction, check the result (DOM state, localStorage).
-   This project has no committed test suite, so this is the only real verification available
-   before committing.
+3. Verify in an actual browser (Playwright). There's no example app or HTML page in this repo
+   right now, so build a scratch page that loads `mini.js` then `fn.component.layout.set.js`
+   and exercises the change directly, and drive it with Playwright — check the result (DOM
+   state, localStorage). This project has no committed test suite, so this is the only real
+   verification available before committing.
 4. Commit and push.
