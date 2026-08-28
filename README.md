@@ -29,6 +29,8 @@ Building it against `mini.js` surfaced one real gap: the `form` layout had no `t
 
 Building it surfaced one real gap: `list`'s row-click always opened its edit popup with `caller: e.target.closest('.__popup')`, so a list embedded directly in a page (not inside a popup) had no way to get refreshed after an edit. Fixed in `mini.js` by letting an explicit `caller` passed to `list` win over the auto-detected one -- again, a gap only a second real layout shape surfaced.
 
+It also surfaced a second gap: every popup's and page's own `.refresh()` had to hand-clear its container's children before recreating the list inside it, which meant `app.js`/`recipes-app.js` reaching past `fn.component.create` into raw DOM (`.children`, `.remove()`) to do it -- five call sites doing the same thing once both apps existed. Fixed by adding `fn.component.refresh` to `mini.js`, so `.refresh()` implementations only ever call back into the framework.
+
 ## Running it
 
 Serve this directory with any static file server, e.g.:

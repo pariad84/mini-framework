@@ -47,6 +47,7 @@
             attribute : { type : 'button' },
             text : opt.text,
             style : { padding : '6px 14px', marginBottom : '12px' },
+            parent : opt.parent,
             event : {
                 click : function() {
                     fn.component.create({
@@ -82,11 +83,10 @@
         layout : function() {
             var page = fn.element.create({ tagName : 'div', style : { padding : '24px' } });
             fn.element.create({ tagName : 'h1', text : 'Categories', parent : page });
-            page.appendChild(newButton({ text : '+ New Category', title : 'New Category', resource : categoryResource, caller : page }));
+            newButton({ text : '+ New Category', title : 'New Category', resource : categoryResource, caller : page, parent : page });
             var listContainer = fn.element.create({ tagName : 'div', parent : page });
             page.refresh = function() {
-                Array.from(listContainer.children).forEach(function(c) { c.remove(); });
-                fn.component.create({ name : 'list', resource : categoryResource, datas : categoryDatas(), caller : page, parent : listContainer });
+                fn.component.refresh({ name : 'list', resource : categoryResource, datas : categoryDatas(), caller : page, parent : listContainer });
             };
             page.refresh();
             return page;
@@ -98,11 +98,10 @@
         layout : function() {
             var page = fn.element.create({ tagName : 'div', style : { padding : '24px' } });
             fn.element.create({ tagName : 'h1', text : 'Recipes', parent : page });
-            page.appendChild(newButton({ text : '+ New Recipe', title : 'New Recipe', resource : recipeResource, caller : page }));
+            newButton({ text : '+ New Recipe', title : 'New Recipe', resource : recipeResource, caller : page, parent : page });
             var listContainer = fn.element.create({ tagName : 'div', parent : page });
             page.refresh = function() {
-                Array.from(listContainer.children).forEach(function(c) { c.remove(); });
-                fn.component.create({ name : 'list', resource : recipeResource, datas : recipeDatas(), caller : page, parent : listContainer });
+                fn.component.refresh({ name : 'list', resource : recipeResource, datas : recipeDatas(), caller : page, parent : listContainer });
             };
             page.refresh();
             return page;
@@ -134,9 +133,8 @@
         layout : function(opt = {}) {
             var container = fn.element.create({ tagName : 'div' });
             function render() {
-                Array.from(container.children).forEach(function(c) { c.remove(); });
                 var name = opt.routes[location.hash] || opt.routes['#/'];
-                fn.component.create({ name : name, parent : container });
+                fn.component.refresh({ name : name, parent : container });
             }
             window.addEventListener('hashchange', render);
             render();

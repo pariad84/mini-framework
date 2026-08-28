@@ -54,8 +54,7 @@
         render : function(popupEl) {
             fn.component.create({ name : 'list', resource : projectResource, datas : projectDatas(), parent : popupEl.content });
             popupEl.refresh = function() {
-                Array.from(popupEl.content.children).forEach(function(c) { c.remove(); });
-                fn.component.create({ name : 'list', resource : projectResource, datas : projectDatas(), parent : popupEl.content });
+                fn.component.refresh({ name : 'list', resource : projectResource, datas : projectDatas(), parent : popupEl.content });
             };
         },
     });
@@ -66,8 +65,7 @@
         render : function(popupEl) {
             fn.component.create({ name : 'list', resource : taskResource, datas : taskDatas(), parent : popupEl.content });
             popupEl.refresh = function() {
-                Array.from(popupEl.content.children).forEach(function(c) { c.remove(); });
-                fn.component.create({ name : 'list', resource : taskResource, datas : taskDatas(), parent : popupEl.content });
+                fn.component.refresh({ name : 'list', resource : taskResource, datas : taskDatas(), parent : popupEl.content });
             };
         },
     });
