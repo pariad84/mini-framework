@@ -11,7 +11,10 @@ A minimal, schema-driven CRUD framework, distilled from [devtool.simple](https:/
 7. `data`/`datas` shape-driven dispatch (`fn.component._.openValue`) -- deciding list-vs-single-value editing UI from the actual value's shape (`Array.isArray`), not a declared type.
 8. The `opt` single-parameter convention, and self-contained components that find their own context via `.closest('.__popup')` / `.querySelector('.__form')` instead of caller-injected callbacks.
 
-No build step, no dependencies. `mini.js` is the entire framework in one file.
+No build step, no dependencies. The framework is two plain `<script>` files loaded in order:
+`mini.js` (the core -- essentials #1-3, #5, #7) and `fn.component.layout.set.js` (the `popup`/
+`close-btn`/`save-btn`/`form`/`list` layouts it registers, essentials #4, #6, #8). Both attach to
+the same global `fn` object; there's nothing to import or bundle.
 
 ## Why this exists
 

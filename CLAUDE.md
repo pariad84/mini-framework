@@ -1,13 +1,17 @@
 # mini-framework
 
 A minimal, schema-driven CRUD framework distilled from [devtool.simple](https://github.com/pariad84/devtool.simple)'s
-`fn.js` down to eight essentials (see README.md for the list). `mini.js` (at the repo root) is
-the framework, and knows nothing about any specific app. Each example app lives in its own
-folder next to it -- `task-tracker/app.js` and `recipe-box/recipes-app.js` -- the way
-`devtoolExampleApp` sits on top of `frameworkCore`/`frameworkLayouts` in devtool.simple. The
-split is a hard rule: `mini.js` must never reference anything app-specific (a resource key, a
-field name, a UI label), and an example app must never reach past
-`fn.component.create`/`fn.data.*`/`fn.element.create` to touch the DOM or storage directly.
+`fn.js` down to eight essentials (see README.md for the list). The framework is two files at the
+repo root, loaded as plain `<script>` tags in this order: `mini.js` (the core primitives --
+`fn.element.create`, the layout registry, `fn.data.*`, `render`, `openValue`) and
+`fn.component.layout.set.js` (the `popup`/`close-btn`/`save-btn`/`form`/`list` layouts it
+registers on top of that core). Together they know nothing about any specific app. Each example
+app lives in its own folder next to them -- `task-tracker/app.js` and
+`recipe-box/recipes-app.js` -- the way `devtoolExampleApp` sits on top of
+`frameworkCore`/`frameworkLayouts` in devtool.simple. The split is a hard rule: the framework
+files must never reference anything app-specific (a resource key, a field name, a UI label),
+and an example app must never reach past `fn.component.create`/`fn.data.*`/`fn.element.create`
+to touch the DOM or storage directly.
 
 ## The three things that matter most
 
@@ -43,15 +47,16 @@ field name, a UI label), and an example app must never reach past
   `<style>` block or CSS classes for styling.
 - **No comments.** If a name needs a comment to explain it, rename it instead. The exception is
   a comment marking which of the eight essentials a piece of code is (see the numbered
-  comments already in `mini.js`) — keep those in sync if you reorder or rename things.
+  comments already in `mini.js`/`fn.component.layout.set.js`) — keep those in sync if you
+  reorder or rename things.
 - **English only** for UI text, titles, labels, and log output.
 - **CRUD verbs**: `fn.data.select/insert/update/delete` follow SQL naming, matching
   devtool.simple. Don't introduce a different verb set (`get`/`fetch`/`remove`/etc.) for the
   same concept.
-- **File order within `mini.js`**: most foundational first, most composed last — primitives
-  (`fn.element.create`, the layout registry, `fn.data.*`) before the escape hatches
-  (`render`, `openValue`) before the layouts that use them (`popup` → `form`/`list`, since
-  both reference `popup`'s `.__popup` convention and `renderColumn`).
+- **File order**: most foundational first, most composed last. Within `mini.js`: primitives
+  (`fn.element.create`, the layout registry, `fn.data.*`) before the escape hatches (`render`,
+  `openValue`). Within `fn.component.layout.set.js`: `popup` first (everything else's layouts
+  reference its `.__popup` convention) before `close-btn`/`save-btn` before `form`/`list`.
 
 ## Adding to the framework
 
@@ -76,10 +81,11 @@ enforces it, so it only happens when it's deliberately done.
 
 ## Workflow for changes
 
-1. Implement the change (in `mini.js` if it's the framework, `app.js` if it's app-specific).
-2. `node --check mini.js` / `node --check app.js` to catch syntax errors.
+1. Implement the change (in `mini.js`/`fn.component.layout.set.js` if it's the framework,
+   `app.js` if it's app-specific).
+2. `node --check` on every file you touched, to catch syntax errors.
 3. Verify in an actual browser (Playwright) — load the relevant example's HTML file (e.g.
    `task-tracker/index.html`), drive the interaction, check the result (DOM state, localStorage).
-   This project has no committed test suite, so this is
-   the only real verification available before committing.
+   This project has no committed test suite, so this is the only real verification available
+   before committing.
 4. Commit and push.
