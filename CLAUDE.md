@@ -67,11 +67,14 @@ own folders at the repo root, listed from `index.html` -- currently `crm/`, `win
   `pageSize`); copy from `fn.component.layout.js` as a starting point and re-theme only what the
   example's look needs to change (see `crm/`, `windows-os/`, `android-phone/`). Always name that
   file `layout.js` — not `mobile-layout.js`/`desktop-chrome.js`/etc. — so every example's
-  layouts live in a file with the same name. Use `fn.util.js`'s helpers
+  layouts live in a file with the same name. `form` must define `.save()` (insert-or-update
+  against `fn.data`, using the form's own `el._.resource`/`el._.data` -- this is the form's
+  business, not save-btn's or `fn.util.js`'s, since a real backend might need it to differ per
+  resource) alongside the existing `.getData()`. Use `fn.util.js`'s helpers
   (`fn.util.selectFlat`/`fn.util.newButton`/`fn.util.saveForm`) instead of re-typing the same
   CRUD wiring into `app.js`/`layout.js` — `save-btn` should only decide how its popup/window/
   screen closes and pass that as `fn.util.saveForm`'s `onSaved`, not re-implement the
-  insert-or-update-then-refresh part.
+  call-form.save()-then-refresh part.
 - **When to add to `fn.util.js`**: unlike `fn.js` (see "Adding to the framework" below), this
   doesn't need a second real use first — the three current examples already are that. Add
   something here only when it's logic with no reason to differ between examples (compare

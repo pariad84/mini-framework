@@ -42,21 +42,15 @@
         });
     };
 
-    // Was duplicated inside every example's own save-btn layout -- insert-or-update from the
-    // popup's .__form, then refresh the caller. Only "how the popup/window/screen closes" is
-    // expected to differ per example's chrome, so that part stays a callback (opt.onSaved),
-    // not something this helper decides.
+    // Was duplicated inside every example's own save-btn layout -- calls the popup's .__form's
+    // own .save() (insert-or-update is the form's business, since it's the form that knows its
+    // resource/data -- see the `form` layout in any example's layout.js), then refreshes the
+    // caller. Only "how the popup/window/screen closes" is expected to differ per example's
+    // chrome, so that part stays a callback (opt.onSaved), not something this helper decides.
     fn.util.saveForm = function(opt) {
         var popup = opt.popup;
         var form = popup.querySelector('.__form');
-        var data = form.getData();
-        if (form._.data.id !== undefined) {
-            var merged = Object.assign({}, form._.data, data);
-            delete merged.id;
-            fn.data.update({ key : form._.resource.key, id : form._.data.id, data : merged });
-        } else {
-            fn.data.insert({ key : form._.resource.key, data : data });
-        }
+        form.save();
         if (popup._.caller) {
             popup._.caller.refresh();
         }
