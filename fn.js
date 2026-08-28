@@ -1,4 +1,4 @@
-(function mini(global) {
+(function(global) {
     const fn = {};
 
     fn.component = {};
