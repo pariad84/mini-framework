@@ -30,7 +30,13 @@ This framework's shape was validated against two throwaway example apps -- a flo
 
 ## Using it
 
-Load `fn.js` then `fn.component.layout.set.js` as plain `<script>` tags, in that order, before your app's own script -- both attach to the same global `fn`, no build step needed. There's no example app or demo page in this repo right now; see "Design history" above for the ones that used to live here.
+Load `fn.js` then `fn.component.layout.set.js` as plain `<script>` tags, in that order, before your app's own script -- both attach to the same global `fn`, no build step needed.
+
+## Examples
+
+`index.html` at the repo root lists every example app, each in its own folder next to it. Open it (serve the directory, e.g. `npx serve .`) to browse them:
+
+- `crm/` -- Contacts + Deals, mobile-oriented (bottom tab bar, full-width touch-sized buttons), with Deals referencing both a Contact and a Stage (Stage is itself a seeded resource, so a fixed set of choices needs no framework change).
 
 ## Known limitation: swapping to a real network backend isn't free
 
