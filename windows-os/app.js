@@ -1,7 +1,7 @@
 // File Manager -- a small desktop-OS-themed example app built entirely on fn.js +
 // fn.component.layout.set.js. Folders + Files, with Files referencing a Folder. Same
 // resource-reference pattern as task-tracker's project/task and crm's contact/deal; the desktop
-// OS chrome (draggable windows, taskbar, Start menu) lives entirely in desktop-chrome.js.
+// OS chrome (draggable windows, taskbar, Start menu) lives entirely in layout.js.
 (function fileManagerApp() {
     var fn = window.fn;
 

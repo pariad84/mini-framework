@@ -1,17 +1,15 @@
 # mini-framework
 
-A minimal, schema-driven CRUD framework distilled from devtool.simple's `fn.js` down to seven
-essentials (see README.md for the list). The framework is two files at the repo root, loaded as
-plain `<script>` tags in this order: this repo's own `fn.js` -- named the same on purpose, it's
-the distilled core primitives (`fn.element.create`, the layout registry, `fn.data.*`, `render`)
--- and `fn.component.layout.set.js` (the `popup`/`close-btn`/`save-btn`/`form`/`list` layouts it
-registers on top of that core).
-Together they know nothing about any specific app, the way `frameworkCore`/`frameworkLayouts`
-sit under `devtoolExampleApp` in devtool.simple. The split is a hard rule: the framework files
-must never reference anything app-specific (a resource key, a field name, a UI label), and any
-app built on top must never reach past `fn.component.create`/`fn.data.*`/`fn.element.create` to
-touch the DOM or storage directly. Example apps live in their own folders at the repo root,
-listed from `index.html` -- currently `crm/`, `windows-os/`, and `android-phone/`.
+A minimal, schema-driven CRUD framework built around seven essentials (see README.md for the
+list). The framework is two files at the repo root, loaded as plain `<script>` tags in this
+order: `fn.js` (the core primitives -- `fn.element.create`, the layout registry, `fn.data.*`,
+`render`) and `fn.component.layout.set.js` (the `popup`/`close-btn`/`save-btn`/`form`/`list`
+layouts it registers on top of that core). Together they know nothing about any specific app.
+The split is a hard rule: the framework files must never reference anything app-specific (a
+resource key, a field name, a UI label), and any app built on top must never reach past
+`fn.component.create`/`fn.data.*`/`fn.element.create` to touch the DOM or storage directly.
+Example apps live in their own folders at the repo root, listed from `index.html` -- currently
+`crm/`, `windows-os/`, and `android-phone/`.
 
 ## The three things that matter most
 
@@ -24,9 +22,10 @@ listed from `index.html` -- currently `crm/`, `windows-os/`, and `android-phone/
    A feature only belongs in `fn.js`/`fn.component.layout.set.js` if it's needed to keep the
    seven essentials genuinely usable — UI chrome (popup dragging/resizing, z-index
    auto-detection, scale/opacity settings, cascading popup position off a caller) is explicitly
-   out of scope; devtool.simple already proved those are "the example app," not "the
-   framework." When in doubt, build it in a throwaway app first — only promote something into
-   the framework once a second real use needs it too (see "Adding to the framework" below).
+   out of scope: that's app-level polish, not framework behavior, as `crm/`, `windows-os/`, and
+   `android-phone/` all demonstrate. When in doubt, build it in a throwaway app first — only
+   promote something into the framework once a second real use needs it too (see "Adding to the
+   framework" below).
 
 ## Conventions
 
@@ -49,13 +48,18 @@ listed from `index.html` -- currently `crm/`, `windows-os/`, and `android-phone/
   comments already in `fn.js`/`fn.component.layout.set.js`) — keep those in sync if you
   reorder or rename things.
 - **English only** for UI text, titles, and labels.
-- **CRUD verbs**: `fn.data.select/insert/update/delete` follow SQL naming, matching
-  devtool.simple. Don't introduce a different verb set (`get`/`fetch`/`remove`/etc.) for the
-  same concept.
+- **CRUD verbs**: `fn.data.select/insert/update/delete` follow SQL naming. Don't introduce a
+  different verb set (`get`/`fetch`/`remove`/etc.) for the same concept.
 - **File order**: most foundational first, most composed last. Within `fn.js`: primitives
   (`fn.element.create`, the layout registry, `fn.data.*`) before the escape hatch (`render`).
   Within `fn.component.layout.set.js`: `popup` first (everything else's layouts reference its
   `.__popup` convention) before `close-btn`/`save-btn` before `form`/`list`.
+- **Example folder structure**: `index.html` + `app.js` (the domain -- resources, seed data,
+  launch code) always; add `layout.js` (loaded after `fn.component.layout.set.js`, before
+  `app.js`) only if the example re-registers `popup`/`close-btn`/`save-btn`/etc. for its own
+  visual theme (see `crm/`, `windows-os/`, `android-phone/`). Always name that file `layout.js`
+  — not `mobile-layout.js`/`desktop-chrome.js`/etc. — so every example's chrome override lives
+  in a file with the same name.
 
 ## Adding to the framework
 

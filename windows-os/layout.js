@@ -1,9 +1,9 @@
 // Windows-OS-style chrome for this example only -- draggable/resizable/minimizable windows, a
 // taskbar, and a Start menu are exactly the "UI chrome" CLAUDE.md calls out of scope for the
 // framework (popup dragging/resizing, z-index, cascading position). So this file re-registers
-// popup/close-btn/save-btn through the same fn.component.layout.set registry mobile-layout.js in
-// crm/ used, plus adds new app-only layouts (desktop, taskbar, taskbar-windows, clock,
-// start-menu, desktop-icon, minimize-btn, maximize-btn). No framework file is touched.
+// popup/close-btn/save-btn through the same fn.component.layout.set registry crm/layout.js used,
+// plus adds new app-only layouts (desktop, taskbar, taskbar-windows, clock, start-menu,
+// desktop-icon, minimize-btn, maximize-btn). No framework file is touched.
 (function() {
     var fn = window.fn;
 

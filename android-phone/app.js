@@ -2,7 +2,7 @@
 // fn.component.layout.set.js. Notes reference a Contact, same resource-reference pattern as
 // task-tracker's project/task, crm's contact/deal, and windows-os's folder/file. The phone
 // chrome (device frame, status bar, home screen, back-stack navigation) lives entirely in
-// phone-chrome.js.
+// layout.js.
 (function androidApp() {
     var fn = window.fn;
 
