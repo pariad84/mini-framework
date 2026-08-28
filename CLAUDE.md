@@ -11,7 +11,7 @@ sit under `devtoolExampleApp` in devtool.simple. The split is a hard rule: the f
 must never reference anything app-specific (a resource key, a field name, a UI label), and any
 app built on top must never reach past `fn.component.create`/`fn.data.*`/`fn.element.create` to
 touch the DOM or storage directly. Example apps live in their own folders at the repo root,
-listed from `index.html` -- currently `crm/`.
+listed from `index.html` -- currently `crm/` and `windows-os/`.
 
 ## The three things that matter most
 
