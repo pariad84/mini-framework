@@ -1,4 +1,4 @@
-// CRM -- a mobile-oriented example app built entirely on fn.js + fn.component.layout.set.js.
+// CRM -- a mobile-oriented example app built entirely on fn.js + fn.component.layout.js.
 // Contacts + Deals, with Deals referencing a Contact and a Stage (Stage is itself a resource,
 // seeded with fixed rows, so deal.stageId is a plain resource-reference select like everything
 // else -- no framework change needed for a fixed set of choices).

@@ -1,5 +1,5 @@
 // Contacts + Notes -- a small Android-phone-themed example app built entirely on fn.js +
-// fn.component.layout.set.js. Notes reference a Contact, same resource-reference pattern as
+// fn.component.layout.js. Notes reference a Contact, same resource-reference pattern as
 // task-tracker's project/task, crm's contact/deal, and windows-os's folder/file. The phone
 // chrome (device frame, status bar, home screen, back-stack navigation) lives entirely in
 // layout.js.
