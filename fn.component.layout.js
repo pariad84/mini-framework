@@ -72,14 +72,7 @@
                     click : function(e) {
                         var popup = e.target.closest('.__popup');
                         var form = popup.querySelector('.__form');
-                        var data = form.getData();
-                        if (form._.data.id !== undefined) {
-                            var merged = Object.assign({}, form._.data, data);
-                            delete merged.id;
-                            fn.data.update({ key : form._.resource.key, id : form._.data.id, data : merged });
-                        } else {
-                            fn.data.insert({ key : form._.resource.key, data : data });
-                        }
+                        form.save();
                         if (popup._.caller) {
                             popup._.caller.refresh();
                         }
@@ -169,6 +162,18 @@
                     result[column.name] = column.form.resource ? Number(input.value) : input.value;
                 });
                 return result;
+            };
+
+            // Insert-or-update is the form's own business, not save-btn's -- the form is what
+            // knows its resource and (if editing) its existing data's id.
+            el.save = function() {
+                var data = el.getData();
+                if (el._.data.id !== undefined) {
+                    var merged = Object.assign({}, el._.data, data);
+                    delete merged.id;
+                    return fn.data.update({ key : el._.resource.key, id : el._.data.id, data : merged });
+                }
+                return fn.data.insert({ key : el._.resource.key, data : data });
             };
 
             return el;

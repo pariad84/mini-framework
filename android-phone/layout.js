@@ -176,6 +176,18 @@
                 return result;
             };
 
+            // Insert-or-update is the form's own business, not save-btn's -- the form is what
+            // knows its resource and (if editing) its existing data's id.
+            el.save = function() {
+                var data = el.getData();
+                if (el._.data.id !== undefined) {
+                    var merged = Object.assign({}, el._.data, data);
+                    delete merged.id;
+                    return fn.data.update({ key : el._.resource.key, id : el._.data.id, data : merged });
+                }
+                return fn.data.insert({ key : el._.resource.key, data : data });
+            };
+
             return el;
         }
     });
