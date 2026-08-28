@@ -65,18 +65,6 @@ in this repo right now, so a change here needs a throwaway app built to exercise
 the framework once that app hits a real gap, then use the fix from that app, and note what real
 need drove it in the commit message, not just what the diff does.
 
-## Staying in sync with devtool.simple
-
-The framework was extracted from `fn.js` at a point in time, not linked to it — `fn.js` keeps
-evolving on its own after the extraction, and nothing here notices when it does. When you're
-about to touch `mini.js` or `fn.component.layout.set.js` (or asked to), first check whether the
-framework-layer piece you're touching (naming, an escape hatch, a layout) has since changed
-shape in `devtool.simple`'s `fn.js` and port that change over too, the same direction the
-`textarea` and `render` gaps were closed: read the equivalent code in `fn.js`, match its current
-naming/behavior exactly in this simpler form, and don't reintroduce app-specific pieces
-(`devtoolExampleApp` concerns) that don't belong here. This is a manual, occasional check, not
-automatic — nothing enforces it, so it only happens when it's deliberately done.
-
 ## Workflow for changes
 
 1. Implement the change (in `mini.js`/`fn.component.layout.set.js` if it's the framework, or in
