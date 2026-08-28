@@ -89,20 +89,10 @@
                 text : 'SAVE',
                 style : { padding : '10px 16px', marginTop : '12px', width : '100%', background : '#4285f4', color : '#fff', border : 'none', borderRadius : '4px', fontWeight : '600', fontSize : '14px' },
                 event : { click : function(e) {
-                    var popup = e.target.closest('.__popup');
-                    var form = popup.querySelector('.__form');
-                    var data = form.getData();
-                    if (form._.data.id !== undefined) {
-                        var merged = Object.assign({}, form._.data, data);
-                        delete merged.id;
-                        fn.data.update({ key : form._.resource.key, id : form._.data.id, data : merged });
-                    } else {
-                        fn.data.insert({ key : form._.resource.key, data : data });
-                    }
-                    if (popup._.caller) {
-                        popup._.caller.refresh();
-                    }
-                    popScreen(popup);
+                    fn.util.saveForm({
+                        popup : e.target.closest('.__popup'),
+                        onSaved : popScreen,
+                    });
                 } },
             });
         }

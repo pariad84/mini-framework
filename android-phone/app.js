@@ -23,18 +23,6 @@
         ],
     };
 
-    function contactDatas() {
-        return fn.data.select({ key : 'contact' }).map(function(row) {
-            return Object.assign({ id : row.id }, row.data);
-        });
-    }
-
-    function noteDatas() {
-        return fn.data.select({ key : 'note' }).map(function(row) {
-            return Object.assign({ id : row.id }, row.data);
-        });
-    }
-
     if (fn.data.select({ key : 'contact' }).length === 0) {
         var alex = fn.data.insert({ key : 'contact', data : { name : 'Alex Kim', phone : '010-1234-5678' } });
         var priya = fn.data.insert({ key : 'contact', data : { name : 'Priya Shah', phone : '010-9876-5432' } });
@@ -42,38 +30,17 @@
         fn.data.insert({ key : 'note', data : { title : 'Birthday reminder', contactId : priya.id, body : 'Send a card next week.' } });
     }
 
-    function newButton(opt) {
-        return fn.element.create({
-            tagName : 'button',
-            attribute : { type : 'button' },
-            text : opt.text,
-            style : { padding : '10px 16px', marginBottom : '12px', width : '100%', background : '#fff', color : '#4285f4', border : '1px solid #4285f4', borderRadius : '4px', fontWeight : '600' },
-            parent : opt.parent,
-            event : {
-                click : function() {
-                    fn.component.create({
-                        name : 'popup',
-                        title : opt.title,
-                        caller : opt.caller,
-                        render : function(screen) {
-                            fn.component.create({ name : 'form', resource : opt.resource, data : {}, parent : screen.content });
-                            fn.component.create({ name : 'save-btn', parent : screen.content });
-                        },
-                    });
-                }
-            },
-        });
-    }
+    var newButtonStyle = { padding : '10px 16px', marginBottom : '12px', width : '100%', background : '#fff', color : '#4285f4', border : '1px solid #4285f4', borderRadius : '4px', fontWeight : '600' };
 
     function openContacts() {
         fn.component.create({
             name : 'popup',
             title : 'Contacts',
             render : function(screen) {
-                newButton({ text : '+ New Contact', title : 'New Contact', resource : contactResource, caller : screen, parent : screen.content });
+                fn.util.newButton({ text : '+ New Contact', title : 'New Contact', resource : contactResource, caller : screen, parent : screen.content, style : newButtonStyle });
                 var listContainer = fn.element.create({ tagName : 'div', parent : screen.content });
                 screen.refresh = function() {
-                    fn.component.refresh({ name : 'list', resource : contactResource, datas : contactDatas(), caller : screen, parent : listContainer });
+                    fn.component.refresh({ name : 'list', resource : contactResource, datas : fn.util.selectFlat({ key : 'contact' }), caller : screen, parent : listContainer });
                 };
                 screen.refresh();
             },
@@ -85,10 +52,10 @@
             name : 'popup',
             title : 'Notes',
             render : function(screen) {
-                newButton({ text : '+ New Note', title : 'New Note', resource : noteResource, caller : screen, parent : screen.content });
+                fn.util.newButton({ text : '+ New Note', title : 'New Note', resource : noteResource, caller : screen, parent : screen.content, style : newButtonStyle });
                 var listContainer = fn.element.create({ tagName : 'div', parent : screen.content });
                 screen.refresh = function() {
-                    fn.component.refresh({ name : 'list', resource : noteResource, datas : noteDatas(), caller : screen, parent : listContainer });
+                    fn.component.refresh({ name : 'list', resource : noteResource, datas : fn.util.selectFlat({ key : 'note' }), caller : screen, parent : listContainer });
                 };
                 screen.refresh();
             },
