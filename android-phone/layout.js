@@ -2,8 +2,9 @@
 // layouts -- fn.component.layout.js is itself just one reference implementation of these,
 // not a dependency every example must load, so this file defines every layout the app below
 // needs directly, via the same fn.component.layout.set registry. popup/close-btn/save-btn are
-// Android-phone-style (a device frame, status bar, home screen with tappable icons, a 3-button
-// nav bar, and full-screen app views with back-stack navigation -- the same category of
+// Android-phone-style (a status bar, home screen with tappable icons, a 3-button nav bar, and
+// full-screen app views with back-stack navigation, filling the whole viewport like a real
+// mobile web page -- no device bezel, this isn't a phone mockup) -- the same category of
 // app-specific UI chrome CLAUDE.md calls out of scope for the framework; see windows-os/layout.js
 // for the desktop-OS equivalent of this same override technique); form/list/pagination are
 // unchanged from the reference implementation.
@@ -419,20 +420,11 @@
     fn.component.layout.set({
         name : 'phone',
         layout : function(opt = {}) {
-            var device = fn.element.create({
+            var screen = fn.element.create({
                 tagName : 'div',
                 style : {
-                    width : '360px', height : '720px', margin : '40px auto',
-                    background : '#111', borderRadius : '36px', padding : '12px',
-                    boxShadow : '0 10px 40px rgba(0,0,0,0.5)', boxSizing : 'border-box',
-                },
-            });
-
-            var screen = fn.element.create({
-                tagName : 'div', parent : device,
-                style : {
-                    position : 'relative', width : '100%', height : '100%',
-                    background : '#fff', borderRadius : '24px', overflow : 'hidden',
+                    position : 'fixed', top : '0', left : '0', right : '0', bottom : '0',
+                    background : '#fff', overflow : 'hidden',
                     display : 'flex', flexDirection : 'column',
                 },
             });
@@ -455,7 +447,7 @@
             fn.component.create({ name : 'home-screen', apps : opt.apps, parent : content });
             fn.component.create({ name : 'nav-bar', parent : screen });
 
-            return device;
+            return screen;
         }
     });
 })();
