@@ -18,8 +18,7 @@ touch the DOM or storage directly. There is currently no example app in this rep
    similar pieces do it and match that shape. Don't let two things that do conceptually the
    same job drift into different implementations — extract a shared helper instead.
 2. **Terminology.** Names should agree with each other end to end — the option key, the
-   layout name, the visible label, and the log output should all describe the same concept
-   the same way.
+   layout name, and the visible label should all describe the same concept the same way.
 3. **Stay minimal.** This project's entire point is to be small enough to read in one sitting.
    A feature only belongs in `mini.js`/`fn.component.layout.set.js` if it's needed to keep the
    seven essentials genuinely usable — UI chrome (popup dragging/resizing, z-index
@@ -48,7 +47,7 @@ touch the DOM or storage directly. There is currently no example app in this rep
   a comment marking which of the seven essentials a piece of code is (see the numbered
   comments already in `mini.js`/`fn.component.layout.set.js`) — keep those in sync if you
   reorder or rename things.
-- **English only** for UI text, titles, labels, and log output.
+- **English only** for UI text, titles, and labels.
 - **CRUD verbs**: `fn.data.select/insert/update/delete` follow SQL naming, matching
   devtool.simple. Don't introduce a different verb set (`get`/`fetch`/`remove`/etc.) for the
   same concept.
@@ -60,13 +59,11 @@ touch the DOM or storage directly. There is currently no example app in this rep
 ## Adding to the framework
 
 Don't add a capability to the framework files because a hypothetical app might need it — add it
-because a real app built on this actually needed it and the framework was missing it. The
-`textarea` form type is the model case: it was added because an earlier example app's "Notes"
-field needed multi-line text and the framework had no way to express that, not speculatively
-ahead of time. There's no example app in this repo right now (see README.md's "Design history"
-for the ones that used to validate it), so a change here needs a throwaway app built to exercise
-it first — fix the framework once that app hits a real gap, then use the fix from that app, and
-note what real need drove it in the commit message, not just what the diff does.
+because a real app built on this actually needed it and the framework was missing it (see
+README.md's "Design history" for the model cases this already produced). There's no example app
+in this repo right now, so a change here needs a throwaway app built to exercise it first — fix
+the framework once that app hits a real gap, then use the fix from that app, and note what real
+need drove it in the commit message, not just what the diff does.
 
 ## Staying in sync with devtool.simple
 
