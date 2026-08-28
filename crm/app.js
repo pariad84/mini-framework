@@ -87,7 +87,7 @@
     fn.component.layout.set({
         name : 'contacts-page',
         layout : function() {
-            var page = fn.element.create({ tagName : 'div', style : { padding : '16px', paddingBottom : '72px' } });
+            var page = fn.element.create({ tagName : 'div', style : { padding : '16px', paddingBottom : '100px' } });
             fn.element.create({ tagName : 'h1', text : 'Contacts', style : { fontSize : '20px' }, parent : page });
             newButton({ text : '+ New Contact', title : 'New Contact', resource : contactResource, caller : page, parent : page });
             var listContainer = fn.element.create({ tagName : 'div', parent : page });
@@ -102,7 +102,7 @@
     fn.component.layout.set({
         name : 'deals-page',
         layout : function() {
-            var page = fn.element.create({ tagName : 'div', style : { padding : '16px', paddingBottom : '72px' } });
+            var page = fn.element.create({ tagName : 'div', style : { padding : '16px', paddingBottom : '100px' } });
             fn.element.create({ tagName : 'h1', text : 'Deals', style : { fontSize : '20px' }, parent : page });
             newButton({ text : '+ New Deal', title : 'New Deal', resource : dealResource, caller : page, parent : page });
             var listContainer = fn.element.create({ tagName : 'div', parent : page });

@@ -5,7 +5,7 @@ A minimal, schema-driven CRUD framework, distilled from [devtool.simple](https:/
 1. `fn.element.create` -- the one DOM-builder primitive everything else is built from.
 2. `fn.component.layout.set/get/create` -- a named-layout registry/dispatcher.
 3. `fn.data.select/insert/update/delete` -- a CRUD abstraction (localStorage-backed here; swapping the storage layer only means rewriting these four functions).
-4. Schema-driven `form`/`list` layouts -- a `resource: {key, columns}` shape plus `data`/`datas` mechanically drives a full CRUD UI, no per-resource UI code.
+4. Schema-driven `form`/`list` layouts -- a `resource: {key, columns}` shape plus `data`/`datas` mechanically drives a full CRUD UI, no per-resource UI code. `list` pages itself past `opt.pageSize` rows (default 10), paired with a `pagination` layout that finds its own `list` via `.closest('.__list')` rather than a caller-injected callback.
 5. A `render` escape hatch -- a column can carry a JS source string instead of a fixed type, letting a resource definition (pure data) extend what a field/cell does without touching this file.
 6. A resource-reference field (`column.form.resource: {key, label}`) -- a select whose options come from another resource's rows, auto-resolved to a label everywhere it's displayed.
 7. The `opt` single-parameter convention, and self-contained components that find their own context via `.closest('.__popup')` / `.querySelector('.__form')` instead of caller-injected callbacks.
@@ -27,6 +27,7 @@ This framework's shape was validated against two throwaway example apps -- a flo
 - The `form` layout had no `textarea` support at all (only text input, select, and the render escape hatch) -- fixed by adding the `textarea` form type.
 - `list`'s row-click always opened its edit popup with `caller: e.target.closest('.__popup')`, so a list embedded directly in a page (not inside a popup) had no way to get refreshed after an edit -- fixed by letting an explicit `caller` passed to `list` win over the auto-detected one.
 - Every popup's/page's own `.refresh()` had to hand-clear its container's children before recreating the list inside it, reaching past `fn.component.create` into raw DOM (`.children`, `.remove()`) -- fixed by adding `fn.component.refresh`, so `.refresh()` implementations only ever call back into the framework.
+- `list` had no way to page through a resource with more than a handful of rows -- fixed by adding a `pagination` layout paired with `list` (list slices its own `datas` by `opt.pageSize` and keeps the current page on its own `.__list` wrapper; `pagination`'s Prev/Next buttons find that wrapper via `.closest('.__list')`, the same self-contained convention `close-btn`/`save-btn` already used, instead of `list` handing them a callback).
 
 ## Using it
 
@@ -36,7 +37,7 @@ Load `fn.js` then `fn.component.layout.set.js` as plain `<script>` tags, in that
 
 `index.html` at the repo root lists every example app, each in its own folder next to it. Open it (serve the directory, e.g. `npx serve .`) to browse them:
 
-- `crm/` -- Contacts + Deals, mobile-oriented (bottom tab bar, full-width touch-sized buttons), with Deals referencing both a Contact and a Stage (Stage is itself a seeded resource, so a fixed set of choices needs no framework change). Its `mobile-layout.js` re-registers `popup`/`close-btn`/`save-btn`/`form` with mobile-appropriate styling (full-screen modal instead of a small fixed-position box, 16px inputs, bigger tap targets) -- registering the same layout names again through `fn.component.layout.set` overrides the framework's defaults entirely from within the example folder, no framework file touched.
+- `crm/` -- Contacts + Deals, mobile-oriented (bottom tab bar, full-width touch-sized buttons), with Deals referencing both a Contact and a Stage (Stage is itself a seeded resource, so a fixed set of choices needs no framework change). Its `mobile-layout.js` re-registers `popup`/`close-btn`/`save-btn`/`form` with mobile-appropriate styling (full-screen modal instead of a small fixed-position box, 16px inputs, bigger tap targets) -- registering the same layout names again through `fn.component.layout.set` overrides the framework's defaults entirely from within the example folder, no framework file touched. `list` pages itself once a list passes 10 rows.
 
 ## Known limitation: swapping to a real network backend isn't free
 
