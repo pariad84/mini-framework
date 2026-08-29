@@ -31,6 +31,15 @@
 // bar of its own: this app only ever shows one of three views at a time (story/editor/endings),
 // and only Editor is substantial enough to need its own screen rather than a popup. Player is
 // CRUD'd through the usual popup/form/save-btn only for its name (the Rename button).
+// Multi-language content reuses that same `column.form.json` mechanism rather than adding new
+// machinery: `title`/`text`/`endingType`/`choices` are stored as `{lang: value}` objects (e.g.
+// `title: {en: "...", ko: "..."}`), authored together as one JSON blob per field in one save --
+// there is no separate "add a translation" action. getLocalized(obj) reads `obj[currentLang]`,
+// falling back to `.en`; the story screen's language <select> is built from
+// `Object.keys(scene.title)`, so a scene that only has `en` shows no other option, and any
+// language a reader adds to a scene's JSON shows up automatically next time that scene renders.
+// findCycles walks every language's choices (deduped) since the graph is meant to be the same
+// shape across languages -- only the labels differ.
 (function() {
     var fn = window.fn;
 
@@ -41,6 +50,21 @@
     var rootArea = null;
     var currentSceneKey = 'start';
     var mode = 'story';
+    var currentLang = 'en';
+    var langLabels = { en : 'English', ko : '한국어' };
+
+    function getLocalized(obj) {
+        if (!obj) {
+            return '';
+        }
+        if (obj[currentLang] !== undefined) {
+            return obj[currentLang];
+        }
+        if (obj.en !== undefined) {
+            return obj.en;
+        }
+        return '';
+    }
 
     function getPlayer() {
         return fn.data.select({ key : 'player', id : playerId });
@@ -66,7 +90,7 @@
 
     function exportStory() {
         var scenes = fn.util.selectFlat({ key : 'scene' }).map(function(s) {
-            return { key : s.key, title : s.title, text : s.text, endingType : s.endingType || '', choices : s.choices };
+            return { key : s.key, title : s.title, text : s.text, endingType : s.endingType || {}, choices : s.choices };
         });
         var blob = new Blob([ JSON.stringify(scenes, null, 2) ], { type : 'application/json' });
         var url = URL.createObjectURL(blob);
@@ -97,7 +121,7 @@
             parsed.forEach(function(scene) {
                 fn.data.insert({
                     key : 'scene',
-                    data : { key : scene.key, title : scene.title, text : scene.text, endingType : scene.endingType || '', choices : scene.choices || [] },
+                    data : { key : scene.key, title : scene.title, text : scene.text, endingType : scene.endingType || {}, choices : scene.choices || {} },
                 });
             });
             currentSceneKey = 'start';
@@ -119,6 +143,20 @@
         var stack = [];
         var inStack = {};
 
+        function nextKeysOf(scene) {
+            var seen = {};
+            var keys = [];
+            Object.keys(scene.choices || {}).forEach(function(lang) {
+                (scene.choices[lang] || []).forEach(function(choice) {
+                    if (!seen[choice.next]) {
+                        seen[choice.next] = true;
+                        keys.push(choice.next);
+                    }
+                });
+            });
+            return keys;
+        }
+
         function dfs(key) {
             if (visited[key] || !byKey[key]) {
                 return;
@@ -126,13 +164,13 @@
             stack.push(key);
             inStack[key] = true;
 
-            (byKey[key].choices || []).forEach(function(choice) {
-                if (inStack[choice.next]) {
-                    var idx = stack.indexOf(choice.next);
-                    var path = stack.slice(idx).concat(choice.next);
-                    cycles.push(path.map(function(k) { return byKey[k] ? byKey[k].title : k; }));
+            nextKeysOf(byKey[key]).forEach(function(next) {
+                if (inStack[next]) {
+                    var idx = stack.indexOf(next);
+                    var path = stack.slice(idx).concat(next);
+                    cycles.push(path.map(function(k) { return byKey[k] ? getLocalized(byKey[k].title) : k; }));
                 } else {
-                    dfs(choice.next);
+                    dfs(next);
                 }
             });
 
@@ -169,8 +207,9 @@
     function goToScene(key) {
         currentSceneKey = key;
         var scene = findScene(key);
-        if (scene.choices.length === 0) {
-            fn.data.insert({ key : 'ending', data : { endingTitle : scene.title, endingType : scene.endingType } });
+        var choices = getLocalized(scene.choices) || [];
+        if (choices.length === 0) {
+            fn.data.insert({ key : 'ending', data : { endingTitle : getLocalized(scene.title), endingType : getLocalized(scene.endingType) } });
         }
         refreshScreen();
     }
@@ -309,7 +348,7 @@
                 } else if (column.form.type === 'textarea') {
                     input = fn.element.create({
                         tagName : 'textarea',
-                        attribute : column.form.json ? { name : column.name, placeholder : '[{"label":"...","next":"..."}]' } : { name : column.name },
+                        attribute : column.form.placeholder ? { name : column.name, placeholder : column.form.placeholder } : { name : column.name },
                         style : Object.assign({}, inputStyle, { minHeight : column.form.height || '60px', resize : 'vertical' }),
                         parent : field,
                     });
@@ -331,7 +370,12 @@
                         });
                     }
                 } else {
-                    input = fn.element.create({ tagName : 'input', attribute : { type : 'text', name : column.name }, style : inputStyle, parent : field });
+                    input = fn.element.create({
+                        tagName : 'input',
+                        attribute : column.form.placeholder ? { type : 'text', name : column.name, placeholder : column.form.placeholder } : { type : 'text', name : column.name },
+                        style : inputStyle,
+                        parent : field,
+                    });
                 }
 
                 if (input.tagName !== 'BUTTON' && opt.data[column.name] !== undefined) {
@@ -355,7 +399,7 @@
                         try {
                             value = JSON.parse(value);
                         } catch (e) {
-                            value = [];
+                            value = {};
                         }
                     }
                     result[column.name] = value;
@@ -527,11 +571,22 @@
         layout : function() {
             var player = getPlayer();
             var scene = findScene(currentSceneKey);
+            var choices = getLocalized(scene.choices) || [];
             var wrap = fn.element.create({ tagName : 'div', style : { padding : '20px' } });
 
             var header = fn.element.create({ tagName : 'div', style : { display : 'flex', justifyContent : 'space-between', alignItems : 'center', marginBottom : '20px' }, parent : wrap });
             fn.element.create({ tagName : 'div', text : 'Reader: ' + player.data.name, style : { fontSize : '12px', color : dim }, parent : header });
-            var btnRow = fn.element.create({ tagName : 'div', style : { display : 'flex', gap : '8px' }, parent : header });
+            var btnRow = fn.element.create({ tagName : 'div', style : { display : 'flex', gap : '8px', alignItems : 'center' }, parent : header });
+            var langSelect = fn.element.create({
+                tagName : 'select',
+                style : { padding : '5px 6px', fontSize : '12px', background : bg, color : accent, border : '1px solid ' + dim, borderRadius : '4px' },
+                event : { change : function(e) { currentLang = e.target.value; refreshScreen(); } },
+                parent : btnRow,
+            });
+            Object.keys(scene.title || {}).forEach(function(lang) {
+                fn.element.create({ tagName : 'option', attribute : { value : lang }, text : langLabels[lang] || lang, parent : langSelect });
+            });
+            langSelect.value = currentLang;
             fn.element.create({
                 tagName : 'button', attribute : { type : 'button' }, text : 'Editor',
                 style : { padding : '6px 10px', fontSize : '12px', background : bg, color : accent, border : '1px solid ' + dim, borderRadius : '4px', cursor : 'pointer' },
@@ -548,13 +603,13 @@
                 event : { click : openRename }, parent : btnRow,
             });
 
-            var isEnding = scene.choices.length === 0;
+            var isEnding = choices.length === 0;
             if (isEnding) {
-                fn.element.create({ tagName : 'div', text : scene.endingType, style : { fontSize : '11px', letterSpacing : '2px', color : accent, textTransform : 'uppercase', marginBottom : '6px' }, parent : wrap });
+                fn.element.create({ tagName : 'div', text : getLocalized(scene.endingType), style : { fontSize : '11px', letterSpacing : '2px', color : accent, textTransform : 'uppercase', marginBottom : '6px' }, parent : wrap });
             }
 
-            fn.element.create({ tagName : 'div', text : scene.title, style : { fontWeight : '700', fontSize : '20px', color : accent, marginBottom : '12px' }, parent : wrap });
-            fn.element.create({ tagName : 'div', text : scene.text, style : { fontSize : '15px', lineHeight : '1.7', color : text, marginBottom : '24px' }, parent : wrap });
+            fn.element.create({ tagName : 'div', text : getLocalized(scene.title), style : { fontWeight : '700', fontSize : '20px', color : accent, marginBottom : '12px' }, parent : wrap });
+            fn.element.create({ tagName : 'div', text : getLocalized(scene.text), style : { fontSize : '15px', lineHeight : '1.7', color : text, marginBottom : '24px' }, parent : wrap });
 
             if (isEnding) {
                 fn.element.create({ tagName : 'div', text : 'THE END', style : { fontSize : '12px', letterSpacing : '3px', color : dim, marginBottom : '16px' }, parent : wrap });
@@ -567,7 +622,7 @@
                 return wrap;
             }
 
-            scene.choices.forEach(function(choice) {
+            choices.forEach(function(choice) {
                 fn.element.create({
                     tagName : 'button', attribute : { type : 'button' }, text : choice.label,
                     style : {
