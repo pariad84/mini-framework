@@ -16,7 +16,13 @@
 // Download button serializes every Scene row into one JSON array (a portable "novel file"), and
 // an Upload file input replaces every Scene row with a freshly parsed one (validated to include a
 // 'start' key) -- both built from nothing but fn.data.select/insert/delete, no framework change
-// needed. A scene with an empty `choices` array *is* an ending: goToScene logs it into the Ending
+// needed. Because a reader can wire `choice.next` to anything, the graph isn't guaranteed acyclic
+// the way the seeded story is -- a "Check for Loops" button runs findCycles (a plain DFS that
+// tracks which keys are on the current path; a choice back into that path is a back-edge, i.e. a
+// real loop) and reports any it finds by title in a popup. It's informational only, same as
+// everything else in the Editor -- a loop is a legitimate narrative device (a repeating day, a
+// hub you can leave and return to), not an error, so this never blocks saving or importing.
+// A scene with an empty `choices` array *is* an ending: goToScene logs it into the Ending
 // resource the moment you first arrive (not on every re-render, which would double-count), so
 // EndingLog is a real, replayable resource -- reach the same or a different ending across
 // playthroughs and it keeps growing, genuinely worth paging through (list/pagination, unchanged
@@ -98,6 +104,66 @@
             refreshScreen();
         };
         reader.readAsText(file);
+    }
+
+    // Standard directed-graph cycle detection: DFS from every scene, tracking which keys are on
+    // the current path (`inStack`). A choice pointing at a key still on that path is a back-edge
+    // -- a real loop -- and the path slice from that key to here (plus the repeat) is the cycle,
+    // reported by title. Purely informational (see the file header) -- never blocks save/import.
+    function findCycles() {
+        var byKey = {};
+        fn.util.selectFlat({ key : 'scene' }).forEach(function(s) { byKey[s.key] = s; });
+
+        var cycles = [];
+        var visited = {};
+        var stack = [];
+        var inStack = {};
+
+        function dfs(key) {
+            if (visited[key] || !byKey[key]) {
+                return;
+            }
+            stack.push(key);
+            inStack[key] = true;
+
+            (byKey[key].choices || []).forEach(function(choice) {
+                if (inStack[choice.next]) {
+                    var idx = stack.indexOf(choice.next);
+                    var path = stack.slice(idx).concat(choice.next);
+                    cycles.push(path.map(function(k) { return byKey[k] ? byKey[k].title : k; }));
+                } else {
+                    dfs(choice.next);
+                }
+            });
+
+            stack.pop();
+            inStack[key] = false;
+            visited[key] = true;
+        }
+
+        Object.keys(byKey).forEach(dfs);
+        return cycles;
+    }
+
+    function openLoopCheck() {
+        var cycles = findCycles();
+        fn.component.create({
+            name : 'popup',
+            title : 'Loop Check',
+            render : function(popupEl) {
+                if (cycles.length === 0) {
+                    fn.element.create({ tagName : 'div', text : 'No loops detected.', style : { color : dim }, parent : popupEl.content });
+                    return;
+                }
+                fn.element.create({
+                    tagName : 'div', text : cycles.length + (cycles.length === 1 ? ' loop found:' : ' loops found:'),
+                    style : { fontWeight : '700', color : accent, marginBottom : '10px' }, parent : popupEl.content,
+                });
+                cycles.forEach(function(cycle) {
+                    fn.element.create({ tagName : 'div', text : cycle.join(' → '), style : { fontSize : '13px', marginBottom : '8px', color : text }, parent : popupEl.content });
+                });
+            },
+        });
     }
 
     function goToScene(key) {
@@ -536,6 +602,11 @@
                 text : '+ New Scene', title : 'New Scene', resource : sceneResource,
                 caller : { refresh : refreshScreen }, parent : toolRow,
                 style : { padding : '8px 12px', fontSize : '13px', background : accent, color : bg, border : 'none', borderRadius : '4px', fontWeight : '700', cursor : 'pointer' },
+            });
+            fn.element.create({
+                tagName : 'button', attribute : { type : 'button' }, text : 'Check for Loops',
+                style : { padding : '8px 12px', fontSize : '13px', background : bg, color : accent, border : '1px solid ' + dim, borderRadius : '4px', cursor : 'pointer' },
+                event : { click : openLoopCheck }, parent : toolRow,
             });
             fn.element.create({
                 tagName : 'button', attribute : { type : 'button' }, text : 'Download JSON',
