@@ -15,14 +15,15 @@
 // (Hunt/Bag/Shop/Log) under a persistent stat bar, switched with the same module-scope-var +
 // fn.component.refresh convention the rest of this file already uses for `activeGroundId`, rather
 // than importing `crm/`'s hash router -- there's nothing here worth bookmarking or deep-linking, so
-// that would be machinery this app doesn't need. All text in the shell is centered via one
-// `textAlign` on the shell/popup root, inherited down, rather than being set per element. HuntLog
-// is a real growing resource worth paging through (list/pagination, restyled but otherwise
-// unchanged from the reference implementation); Ground is only ever entered, never edited, so a
-// plain `<select>` + Enter button covers it without needing `list`/`pagination` or a per-row
-// component at all; Player is CRUD'd through the usual popup/form/save-btn only for its name (the
-// Rename button) -- gold/ore/ingots/hp/weaponLevel/armorLevel/potions are all game state a form
-// should never let the player type in directly.
+// that would be machinery this app doesn't need. Right below the stat bar (character info) sits a
+// shared `feed-box` -- a bordered text box of the most recent HuntLog activity -- reused as-is on
+// both the town screen and the hunting-ground screen instead of hunting-ground keeping its own
+// separate copy. HuntLog is a real growing resource worth paging through (list/pagination,
+// restyled but otherwise unchanged from the reference implementation); Ground is only ever
+// entered, never edited, so a plain `<select>` + Enter button covers it without needing
+// `list`/`pagination` or a per-row component at all; Player is CRUD'd through the usual
+// popup/form/save-btn only for its name (the Rename button) -- gold/ore/ingots/hp/weaponLevel/
+// armorLevel/potions are all game state a form should never let the player type in directly.
 (function() {
     var fn = window.fn;
 
@@ -204,7 +205,7 @@
                 style : {
                     position : 'fixed', top : '70px', left : '50%', transform : 'translateX(-50%)',
                     width : '320px', background : panelBg, color : gold,
-                    border : '1px solid ' + dim, borderRadius : '6px', font : '14px/1.5 ' + appFont, textAlign : 'center',
+                    border : '1px solid ' + dim, borderRadius : '6px', font : '14px/1.5 ' + appFont,
                 },
             });
 
@@ -509,12 +510,14 @@
             var player = getPlayer();
             var bar = fn.element.create({ tagName : 'div', style : { padding : '16px', borderBottom : '1px solid ' + dim } });
 
-            fn.element.create({ tagName : 'div', text : player.data.name, style : { fontWeight : '700', fontSize : '18px' }, parent : bar });
-            fn.element.create({ tagName : 'div', text : 'ATK ' + attackOf(player) + '  DEF ' + defenseOf(player), style : { fontSize : '13px', color : dim, marginTop : '2px' }, parent : bar });
+            var topRow = fn.element.create({ tagName : 'div', style : { display : 'flex', justifyContent : 'space-between', alignItems : 'flex-start' }, parent : bar });
+            var left = fn.element.create({ tagName : 'div', parent : topRow });
+            fn.element.create({ tagName : 'div', text : player.data.name, style : { fontWeight : '700', fontSize : '18px' }, parent : left });
+            fn.element.create({ tagName : 'div', text : 'ATK ' + attackOf(player) + '  DEF ' + defenseOf(player), style : { fontSize : '13px', color : dim, marginTop : '2px' }, parent : left });
             fn.element.create({
                 tagName : 'button', attribute : { type : 'button' }, text : 'Rename',
-                style : { marginTop : '8px', padding : '6px 12px', background : bg, color : gold, border : '1px solid ' + dim, borderRadius : '4px', cursor : 'pointer' },
-                event : { click : openRename }, parent : bar,
+                style : { padding : '6px 12px', background : bg, color : gold, border : '1px solid ' + dim, borderRadius : '4px', cursor : 'pointer' },
+                event : { click : openRename }, parent : topRow,
             });
 
             var hpRow = fn.element.create({ tagName : 'div', style : { marginTop : '10px' }, parent : bar });
@@ -523,15 +526,44 @@
             var pct = Math.max(0, Math.min(100, player.data.hp / maxHp(player) * 100));
             fn.element.create({ tagName : 'div', style : { width : pct + '%', height : '100%', background : pct > 30 ? win : loss }, parent : track });
 
-            fn.element.create({ tagName : 'div', text : 'Gold ' + player.data.gold + '  Ore ' + player.data.ironOre + '  Potions ' + player.data.potions, style : { fontSize : '12px', color : dim, marginTop : '10px' }, parent : bar });
+            var bottomRow = fn.element.create({ tagName : 'div', style : { display : 'flex', justifyContent : 'space-between', alignItems : 'center', marginTop : '10px' }, parent : bar });
+            fn.element.create({ tagName : 'div', text : 'Gold ' + player.data.gold + '  Ore ' + player.data.ironOre + '  Potions ' + player.data.potions, style : { fontSize : '12px', color : dim }, parent : bottomRow });
             var canUse = player.data.potions > 0 && player.data.hp < maxHp(player);
             fn.element.create({
                 tagName : 'button', attribute : { type : 'button' }, text : 'Use Potion',
-                style : { marginTop : '8px', padding : '6px 12px', background : bg, color : canUse ? gold : dim, border : '1px solid ' + dim, borderRadius : '4px', cursor : canUse ? 'pointer' : 'default' },
-                event : { click : usePotion }, parent : bar,
+                style : { padding : '6px 12px', background : bg, color : canUse ? gold : dim, border : '1px solid ' + dim, borderRadius : '4px', cursor : canUse ? 'pointer' : 'default' },
+                event : { click : usePotion }, parent : bottomRow,
             });
 
             return bar;
+        }
+    });
+
+    fn.component.layout.set({
+        name : 'feed-box',
+        layout : function() {
+            var wrap = fn.element.create({ tagName : 'div', style : { padding : '16px' } });
+            fn.element.create({ tagName : 'div', text : 'Activity', style : { fontWeight : '700', marginBottom : '8px' }, parent : wrap });
+
+            var box = fn.element.create({ tagName : 'div', style : { padding : '12px', border : '1px solid ' + dim, borderRadius : '6px', background : panelBg, fontSize : '13px', minHeight : '20px' }, parent : wrap });
+            var recent = fn.util.selectFlat({ key : 'huntLog' }).slice(-10).reverse();
+            if (recent.length === 0) {
+                fn.element.create({ tagName : 'div', text : 'No activity yet. Go hunt!', style : { color : dim }, parent : box });
+                return wrap;
+            }
+            recent.forEach(function(entry) {
+                var line = '[' + entry.result + '] ' + entry.ground + '  dealt ' + entry.dmgDealt + ' dmg';
+                if (entry.dmgTaken) {
+                    line += ', took ' + entry.dmgTaken + ' dmg';
+                }
+                if (entry.ore) {
+                    line += '  +' + entry.ore + ' ore +' + entry.gold + ' gold';
+                }
+                var color = entry.result === 'Kill' ? win : entry.result === 'Potion' ? gold : entry.result === 'Defeat' ? loss : dim;
+                fn.element.create({ tagName : 'div', text : line, style : { color : color, marginBottom : '2px' }, parent : box });
+            });
+
+            return wrap;
         }
     });
 
@@ -733,6 +765,7 @@
         layout : function() {
             var wrap = fn.element.create({ tagName : 'div', style : { paddingBottom : '64px' } });
             fn.component.create({ name : 'stat-bar', parent : wrap });
+            fn.component.create({ name : 'feed-box', parent : wrap });
 
             var content = fn.element.create({ tagName : 'div', style : { padding : '16px' }, parent : wrap });
             var tabLayouts = { hunt : 'hunt-tab', bag : 'bag-tab', shop : 'shop-tab', log : 'log-tab' };
@@ -749,8 +782,9 @@
             var ground = fn.data.select({ key : 'ground', id : activeGroundId });
             var wrap = fn.element.create({ tagName : 'div' });
             fn.component.create({ name : 'stat-bar', parent : wrap });
+            fn.component.create({ name : 'feed-box', parent : wrap });
 
-            var content = fn.element.create({ tagName : 'div', style : { padding : '16px' }, parent : wrap });
+            var content = fn.element.create({ tagName : 'div', style : { padding : '0 16px 16px' }, parent : wrap });
             fn.element.create({ tagName : 'div', text : ground.data.name + ' (Lv.' + ground.data.huntLevel + ')', style : { fontWeight : '700', fontSize : '18px' }, parent : content });
             fn.element.create({ tagName : 'div', text : 'Monster HP ' + Math.max(0, currentMonsterHp) + ' / ' + monsterMaxHp(ground), style : { fontSize : '13px', color : dim, marginTop : '4px' }, parent : content });
 
@@ -758,20 +792,6 @@
                 tagName : 'button', attribute : { type : 'button' }, text : 'Stop Hunting',
                 style : { marginTop : '12px', padding : '10px 16px', background : gold, color : bg, border : 'none', borderRadius : '4px', fontWeight : '700', cursor : 'pointer' },
                 event : { click : leaveGround }, parent : content,
-            });
-
-            fn.element.create({ tagName : 'div', text : 'Combat Feed', style : { marginTop : '20px', marginBottom : '8px', fontWeight : '700' }, parent : content });
-            var feed = fn.element.create({ tagName : 'div', style : { fontSize : '13px' }, parent : content });
-            fn.util.selectFlat({ key : 'huntLog' }).slice(-10).reverse().forEach(function(entry) {
-                var line = '[' + entry.result + '] ' + entry.ground + '  dealt ' + entry.dmgDealt + ' dmg';
-                if (entry.dmgTaken) {
-                    line += ', took ' + entry.dmgTaken + ' dmg';
-                }
-                if (entry.ore) {
-                    line += '  +' + entry.ore + ' ore +' + entry.gold + ' gold';
-                }
-                var color = entry.result === 'Kill' ? win : entry.result === 'Potion' ? gold : entry.result === 'Defeat' ? loss : dim;
-                fn.element.create({ tagName : 'div', text : line, style : { color : color, marginBottom : '2px' }, parent : feed });
             });
 
             return wrap;
@@ -796,7 +816,7 @@
 
             var shell = fn.element.create({
                 tagName : 'div',
-                style : { maxWidth : '480px', margin : '0 auto', minHeight : '100vh', background : bg, color : gold, font : '14px/1.5 ' + appFont, textAlign : 'center' },
+                style : { maxWidth : '480px', margin : '0 auto', minHeight : '100vh', background : bg, color : gold, font : '14px/1.5 ' + appFont },
             });
 
             rootArea = fn.element.create({ tagName : 'div', parent : shell });
