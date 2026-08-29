@@ -1,8 +1,11 @@
 // Signal Lost -- Player + Scene + Ending. Scene is the entire story graph, seeded once (10 story
-// beats + 5 endings), referenced by its own `key` field rather than fn.data's auto-increment id --
-// see layout.js's goToScene/findScene for why. The story: you wake alone on the derelict Kestrel;
-// whether you find Mira, trust the ship's AI (ORACLE), and how far you push into the cargo hold's
-// secret all branch independently, converging and diverging into five distinct endings.
+// beats + 5 endings) as the default story, referenced by its own `key` field rather than
+// fn.data's auto-increment id -- see layout.js's goToScene/findScene for why. It's a real,
+// editable resource from here on (the Editor screen in layout.js), so this seed is a starting
+// point, not fixed content: the default story is you waking alone on the derelict Kestrel, where
+// finding Mira, trusting the ship's AI (ORACLE), and how far you push into the cargo hold's
+// secret all branch independently into five distinct endings -- but a reader can rewrite any of
+// it, add scenes, or replace the whole thing via Download/Upload JSON.
 (function signalLostApp() {
     var fn = window.fn;
 
@@ -18,6 +21,17 @@
         columns : [
             { name : 'endingTitle', label : 'Ending', list : { type : 'text' } },
             { name : 'endingType', label : 'Type', list : { type : 'text' } },
+        ],
+    };
+
+    var sceneResource = {
+        key : 'scene',
+        columns : [
+            { name : 'key', label : 'Key', form : { type : 'text' }, list : { type : 'text' } },
+            { name : 'title', label : 'Title', form : { type : 'text' }, list : { type : 'text' } },
+            { name : 'text', label : 'Text', form : { type : 'textarea', height : '100px' } },
+            { name : 'endingType', label : 'Ending Type (blank if not an ending)', form : { type : 'text' } },
+            { name : 'choices', label : 'Choices (JSON array of {"label","next"} -- [] if this is an ending)', form : { type : 'textarea', height : '140px', json : true } },
         ],
     };
 
@@ -162,6 +176,7 @@
         name : 'game',
         playerResource : playerResource,
         endingResource : endingResource,
+        sceneResource : sceneResource,
         playerId : player.id,
         parent : document.body,
     });

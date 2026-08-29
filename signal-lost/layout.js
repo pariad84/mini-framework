@@ -1,26 +1,40 @@
 // Signal Lost -- a branching sci-fi visual novel built on fn.js + fn.util.js. Scene is the whole
-// story: each row is one beat (key/title/text/choices), seeded once in app.js exactly like
-// idle-hunter's Ground rows -- read-only content the app itself owns, never user-CRUD'd. Scenes
-// reference each other by their own `key` field (a stable string like 'bridge_solo'), not by
-// fn.data's auto-increment id, since the story graph is written by hand in app.js and needs
-// readable, stable targets for `choice.next` -- goToScene looks a scene up by that key via
-// fn.util.selectFlat + .find rather than fn.data.select's id lookup. A scene with an empty
-// `choices` array *is* an ending: goToScene logs it into the Ending resource the moment you first
-// arrive (not on every re-render, which would double-count), so EndingLog is a real, replayable
-// resource -- reach the same or a different ending across playthroughs and it keeps growing,
-// genuinely worth paging through (list/pagination, unchanged from the reference implementation)
-// once a few playthroughs pile up. That log lives behind an "Endings" popup rather than a tab bar
-// -- unlike idle-hunter's multi-screen economy loop, this app only ever has one real view (the
-// story itself), so a second full navigation system would be machinery this app doesn't need.
-// Player is CRUD'd through the usual popup/form/save-btn only for its name (the Rename button).
+// story: each row is one beat (key/title/text/choices), seeded once in app.js like idle-hunter's
+// Ground rows, but -- unlike Ground -- genuinely CRUD'd here: the Editor screen (behind an
+// "Editor" button) is exactly the standard `list` + popup/form/save-btn pattern every other
+// example uses, so writing your own story means clicking a row (or "+ New Scene") and editing it
+// like any other resource. Scenes reference each other by their own `key` field (a stable string
+// like 'bridge_solo'), not by fn.data's auto-increment id, since the graph is hand- or
+// reader-written and needs stable targets for `choice.next` -- goToScene looks a scene up by that
+// key via fn.util.selectFlat + .find rather than fn.data.select's id lookup. `choices` is stored
+// as a real array (same as every other resource field), but its form field carries a
+// `column.form.json: true` flag this file's own `form` layout understands: populate the textarea
+// with `JSON.stringify(value, null, 2)` instead of the raw value, and `JSON.parse` it back on
+// save -- so a reader authors a scene's branches as JSON text directly, the same idea as the
+// framework's read-only JSON-preview escape hatch but round-tripping instead of just previewing.
+// exportStory/importStory extend that same JSON-as-source-of-truth idea to the whole story: a
+// Download button serializes every Scene row into one JSON array (a portable "novel file"), and
+// an Upload file input replaces every Scene row with a freshly parsed one (validated to include a
+// 'start' key) -- both built from nothing but fn.data.select/insert/delete, no framework change
+// needed. A scene with an empty `choices` array *is* an ending: goToScene logs it into the Ending
+// resource the moment you first arrive (not on every re-render, which would double-count), so
+// EndingLog is a real, replayable resource -- reach the same or a different ending across
+// playthroughs and it keeps growing, genuinely worth paging through (list/pagination, unchanged
+// from the reference implementation) once a few playthroughs pile up. That log lives behind an
+// "Endings" popup rather than a tab bar, same reasoning the Editor toggle uses instead of a tab
+// bar of its own: this app only ever shows one of three views at a time (story/editor/endings),
+// and only Editor is substantial enough to need its own screen rather than a popup. Player is
+// CRUD'd through the usual popup/form/save-btn only for its name (the Rename button).
 (function() {
     var fn = window.fn;
 
     var playerResource = null;
     var endingResource = null;
+    var sceneResource = null;
     var playerId = null;
     var rootArea = null;
     var currentSceneKey = 'start';
+    var mode = 'story';
 
     function getPlayer() {
         return fn.data.select({ key : 'player', id : playerId });
@@ -31,7 +45,59 @@
     }
 
     function refreshScreen() {
-        fn.component.refresh({ name : 'story', parent : rootArea });
+        fn.component.refresh({ name : 'screen', parent : rootArea });
+    }
+
+    function openEditor() {
+        mode = 'editor';
+        refreshScreen();
+    }
+
+    function closeEditor() {
+        mode = 'story';
+        refreshScreen();
+    }
+
+    function exportStory() {
+        var scenes = fn.util.selectFlat({ key : 'scene' }).map(function(s) {
+            return { key : s.key, title : s.title, text : s.text, endingType : s.endingType || '', choices : s.choices };
+        });
+        var blob = new Blob([ JSON.stringify(scenes, null, 2) ], { type : 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = fn.element.create({ tagName : 'a', attribute : { href : url, download : 'signal-lost-story.json' } });
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    }
+
+    function importStory(file) {
+        var reader = new FileReader();
+        reader.onload = function() {
+            var parsed;
+            try {
+                parsed = JSON.parse(reader.result);
+            } catch (e) {
+                alert('That file is not valid JSON.');
+                return;
+            }
+            if (!Array.isArray(parsed) || !parsed.some(function(s) { return s.key === 'start'; })) {
+                alert('Expected a JSON array of scenes, including one with key "start".');
+                return;
+            }
+            fn.data.select({ key : 'scene' }).forEach(function(row) {
+                fn.data.delete({ key : 'scene', id : row.id });
+            });
+            parsed.forEach(function(scene) {
+                fn.data.insert({
+                    key : 'scene',
+                    data : { key : scene.key, title : scene.title, text : scene.text, endingType : scene.endingType || '', choices : scene.choices || [] },
+                });
+            });
+            currentSceneKey = 'start';
+            refreshScreen();
+        };
+        reader.readAsText(file);
     }
 
     function goToScene(key) {
@@ -177,7 +243,7 @@
                 } else if (column.form.type === 'textarea') {
                     input = fn.element.create({
                         tagName : 'textarea',
-                        attribute : { name : column.name },
+                        attribute : column.form.json ? { name : column.name, placeholder : '[{"label":"...","next":"..."}]' } : { name : column.name },
                         style : Object.assign({}, inputStyle, { minHeight : column.form.height || '60px', resize : 'vertical' }),
                         parent : field,
                     });
@@ -203,7 +269,7 @@
                 }
 
                 if (input.tagName !== 'BUTTON' && opt.data[column.name] !== undefined) {
-                    input.value = opt.data[column.name];
+                    input.value = column.form.json ? JSON.stringify(opt.data[column.name], null, 2) : opt.data[column.name];
                 }
                 el._.inputs[column.name] = input;
             });
@@ -218,7 +284,15 @@
                     if (input.tagName === 'BUTTON') {
                         return;
                     }
-                    result[column.name] = column.form.resource ? Number(input.value) : input.value;
+                    var value = column.form.resource ? Number(input.value) : input.value;
+                    if (column.form.json) {
+                        try {
+                            value = JSON.parse(value);
+                        } catch (e) {
+                            value = [];
+                        }
+                    }
+                    result[column.name] = value;
                 });
                 return result;
             };
@@ -393,6 +467,11 @@
             fn.element.create({ tagName : 'div', text : 'Reader: ' + player.data.name, style : { fontSize : '12px', color : dim }, parent : header });
             var btnRow = fn.element.create({ tagName : 'div', style : { display : 'flex', gap : '8px' }, parent : header });
             fn.element.create({
+                tagName : 'button', attribute : { type : 'button' }, text : 'Editor',
+                style : { padding : '6px 10px', fontSize : '12px', background : bg, color : accent, border : '1px solid ' + dim, borderRadius : '4px', cursor : 'pointer' },
+                event : { click : openEditor }, parent : btnRow,
+            });
+            fn.element.create({
                 tagName : 'button', attribute : { type : 'button' }, text : 'Endings',
                 style : { padding : '6px 10px', fontSize : '12px', background : bg, color : accent, border : '1px solid ' + dim, borderRadius : '4px', cursor : 'pointer' },
                 event : { click : openEndings }, parent : btnRow,
@@ -440,10 +519,59 @@
     });
 
     fn.component.layout.set({
+        name : 'editor',
+        layout : function() {
+            var wrap = fn.element.create({ tagName : 'div', style : { padding : '20px' } });
+
+            var header = fn.element.create({ tagName : 'div', style : { display : 'flex', justifyContent : 'space-between', alignItems : 'center', marginBottom : '16px' }, parent : wrap });
+            fn.element.create({ tagName : 'div', text : 'Story Editor', style : { fontWeight : '700', fontSize : '18px', color : accent }, parent : header });
+            fn.element.create({
+                tagName : 'button', attribute : { type : 'button' }, text : 'Back to Story',
+                style : { padding : '6px 10px', fontSize : '12px', background : bg, color : accent, border : '1px solid ' + dim, borderRadius : '4px', cursor : 'pointer' },
+                event : { click : closeEditor }, parent : header,
+            });
+
+            var toolRow = fn.element.create({ tagName : 'div', style : { display : 'flex', gap : '8px', marginBottom : '16px', flexWrap : 'wrap', alignItems : 'center' }, parent : wrap });
+            fn.util.newButton({
+                text : '+ New Scene', title : 'New Scene', resource : sceneResource,
+                caller : { refresh : refreshScreen }, parent : toolRow,
+                style : { padding : '8px 12px', fontSize : '13px', background : accent, color : bg, border : 'none', borderRadius : '4px', fontWeight : '700', cursor : 'pointer' },
+            });
+            fn.element.create({
+                tagName : 'button', attribute : { type : 'button' }, text : 'Download JSON',
+                style : { padding : '8px 12px', fontSize : '13px', background : bg, color : accent, border : '1px solid ' + dim, borderRadius : '4px', cursor : 'pointer' },
+                event : { click : exportStory }, parent : toolRow,
+            });
+            fn.element.create({
+                tagName : 'input',
+                attribute : { type : 'file', accept : 'application/json,.json' },
+                style : { fontSize : '12px', color : text, maxWidth : '160px' },
+                event : { change : function(e) { if (e.target.files[0]) { importStory(e.target.files[0]); } } },
+                parent : toolRow,
+            });
+
+            var sceneDatas = fn.util.selectFlat({ key : 'scene' });
+            fn.component.create({ name : 'list', resource : sceneResource, datas : sceneDatas, caller : { refresh : refreshScreen }, pageSize : 8, parent : wrap });
+
+            return wrap;
+        }
+    });
+
+    fn.component.layout.set({
+        name : 'screen',
+        layout : function() {
+            var wrap = fn.element.create({ tagName : 'div' });
+            fn.component.create({ name : mode === 'editor' ? 'editor' : 'story', parent : wrap });
+            return wrap;
+        }
+    });
+
+    fn.component.layout.set({
         name : 'game',
         layout : function(opt = {}) {
             playerResource = opt.playerResource;
             endingResource = opt.endingResource;
+            sceneResource = opt.sceneResource;
             playerId = opt.playerId;
 
             var shell = fn.element.create({
