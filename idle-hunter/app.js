@@ -1,7 +1,8 @@
 // Idle Hunter -- Player + Ground + HuntLog. Ground is seeded once, 10 rows, difficulty scaling
-// with huntLevel (see layout.js's resolveTick/attackOf/defenseOf for how that difficulty actually
-// plays out against the player's own Attack/Defense). Player starts with a little gold so the
-// first weapon upgrade is reachable without a long grind.
+// with huntLevel (see layout.js's resolveTick/attackOf/defenseOf/maxHp for how that difficulty
+// actually plays out against the player's own Attack/Defense/HP). Player starts with a little
+// gold (first weapon upgrade is reachable without a long grind), full HP, and one potion so the
+// auto-drink-on-death mechanic is discoverable without having to buy one first.
 (function idleHunterApp() {
     var fn = window.fn;
 
@@ -17,6 +18,8 @@
         columns : [
             { name : 'ground', label : 'Ground', list : { type : 'text' } },
             { name : 'result', label : 'Result', list : { type : 'text' } },
+            { name : 'dmgDealt', label : 'Dealt', list : { type : 'text' } },
+            { name : 'dmgTaken', label : 'Taken', list : { type : 'text' } },
             { name : 'ore', label : 'Ore', list : { type : 'text' } },
             { name : 'gold', label : 'Gold', list : { type : 'text' } },
         ],
@@ -47,7 +50,7 @@
     }
 
     var players = fn.data.select({ key : 'player' });
-    var player = players.length ? players[0] : fn.data.insert({ key : 'player', data : { name : 'Hunter', weaponLevel : 1, armorLevel : 1, gold : 20, ironOre : 0 } });
+    var player = players.length ? players[0] : fn.data.insert({ key : 'player', data : { name : 'Hunter', weaponLevel : 1, armorLevel : 1, gold : 20, ironOre : 0, hp : 70, potions : 1 } });
 
     fn.component.create({
         name : 'game',
