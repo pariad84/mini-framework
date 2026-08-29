@@ -7,12 +7,16 @@
 // mobile web page -- no device bezel, this isn't a phone mockup) -- the same category of
 // app-specific UI chrome CLAUDE.md calls out of scope for the framework; see windows-os/layout.js
 // for the desktop-OS equivalent of this same override technique); form/list/pagination are
-// unchanged from the reference implementation.
+// unchanged from the reference implementation. Which app is open backs its in-memory
+// `screenStack` with a real route too now (see appKeyFromHash/openApp/syncToHash below), so the
+// physical back button does what the on-screen nav-bar's Home button already did, instead of
+// leaving the page entirely.
 (function() {
     var fn = window.fn;
 
     var screenArea = null;
     var screenStack = [];
+    var appLaunchers = {};
 
     function popScreen(screen) {
         var target = screen || screenStack[screenStack.length - 1];
@@ -21,11 +25,48 @@
         }
         screenStack = screenStack.filter(function(s) { return s !== target; });
         target.remove();
+        if (screenStack.length === 0 && location.hash !== '') {
+            location.hash = '';
+        }
     }
 
     function goHome() {
         screenStack.forEach(function(s) { s.remove(); });
         screenStack = [];
+    }
+
+    // Which app is open (if any) is the one real route here ('#/app/<key>'), via a plain
+    // hashchange listener rather than fn.util.route: that helper's contract is "wipe the
+    // container and render one named layout," which fits a single current screen, not this app's
+    // layered stack (a persistent home-screen underneath, with 0+ popups -- an app, then any
+    // edit/new forms opened inside it -- stacked on top). Only the app itself is routed; popups
+    // opened inside it aren't (same as every other example never routing an edit form), so both
+    // the physical back button and the Home/Recents nav-bar buttons close a whole app's stack at
+    // once via goHomeRoute/syncToHash, same as tapping Home always has -- they don't replicate the
+    // in-app Back arrow's one-screen-at-a-time popScreen.
+    function appKeyFromHash() {
+        var m = location.hash.match(/^#\/app\/(.+)$/);
+        return m && appLaunchers[m[1]] ? m[1] : null;
+    }
+
+    function openApp(key) {
+        location.hash = '#/app/' + key;
+    }
+
+    function goHomeRoute() {
+        if (location.hash === '') {
+            goHome();
+        } else {
+            location.hash = '';
+        }
+    }
+
+    function syncToHash() {
+        goHome();
+        var key = appKeyFromHash();
+        if (key) {
+            appLaunchers[key]();
+        }
     }
 
     fn.component.layout.set({
@@ -343,7 +384,7 @@
             var wrap = fn.element.create({
                 tagName : 'div',
                 style : { width : '70px', textAlign : 'center', cursor : 'pointer', userSelect : 'none' },
-                event : { click : function() { opt.launch(); } },
+                event : { click : function() { openApp(opt.key); } },
             });
             fn.element.create({
                 tagName : 'div', text : opt.icon,
@@ -372,7 +413,7 @@
                 },
             });
             (opt.apps || []).forEach(function(app) {
-                fn.component.create({ name : 'app-icon', icon : app.icon, label : app.label, launch : app.launch, parent : home });
+                fn.component.create({ name : 'app-icon', key : app.key, icon : app.icon, label : app.label, parent : home });
             });
             return home;
         }
@@ -394,7 +435,7 @@
             fn.element.create({
                 tagName : 'button', attribute : { type : 'button', title : 'Home' }, text : '○',
                 style : { background : 'transparent', border : 'none', color : '#fff', fontSize : '18px' },
-                event : { click : function() { goHome(); } },
+                event : { click : function() { goHomeRoute(); } },
                 parent : bar,
             });
             fn.element.create({
@@ -402,7 +443,7 @@
                 // the same as Home rather than modeling a real app-switcher.
                 tagName : 'button', attribute : { type : 'button', title : 'Recents' }, text : '□',
                 style : { background : 'transparent', border : 'none', color : '#fff', fontSize : '18px' },
-                event : { click : function() { goHome(); } },
+                event : { click : function() { goHomeRoute(); } },
                 parent : bar,
             });
             return bar;
@@ -446,8 +487,14 @@
             });
             screenArea = content;
 
+            appLaunchers = {};
+            (opt.apps || []).forEach(function(app) { appLaunchers[app.key] = app.launch; });
+
             fn.component.create({ name : 'home-screen', apps : opt.apps, parent : content });
             fn.component.create({ name : 'nav-bar', parent : screen });
+
+            window.addEventListener('hashchange', syncToHash);
+            syncToHash();
 
             return screen;
         }

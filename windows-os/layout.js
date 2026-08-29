@@ -5,7 +5,14 @@
 // Windows-OS-style (draggable/resizable/minimizable windows with a taskbar and Start menu --
 // exactly the "UI chrome" CLAUDE.md calls out of scope for the framework: popup
 // dragging/resizing, z-index, cascading position); form/list/pagination are unchanged from the
-// reference implementation.
+// reference implementation. Deliberately not hash-routed like crm/team-chat/idle-hunter/
+// signal-lost/android-phone: fn.util.route (and android-phone's own hand-rolled equivalent) both
+// assume there's a single "current screen" a hash can name, but `openWindows` here is a set --
+// zero, one, or several windows can be open and overlapping at once, each independently
+// minimizable, and that's the entire point of the desktop-OS metaphor this example demonstrates.
+// There's no one "current screen" for a URL to name, so there's nothing for the back button to
+// usefully step through; forcing this app into the single-route shape would fight its own point
+// rather than fix a real gap.
 (function() {
     var fn = window.fn;
 

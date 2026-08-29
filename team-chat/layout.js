@@ -5,28 +5,29 @@
 // once, like a messaging app. Clicking a channel doesn't open a popup the way `list`'s default
 // row-click does -- it selects the channel and refreshes the main panel in place -- so this
 // example writes its own `sidebar`/`channel-item`/`main-panel` layouts instead of using `list`
-// at all; `list`/`pagination` aren't needed here and aren't defined. No framework file is
-// touched.
+// at all; `list`/`pagination` aren't needed here and aren't defined. The selected channel is a
+// real route, though, via fn.util.route ('#/channel/<id>'): the sidebar never itself decides what
+// to show, it's just a fixed shell around whatever fn.util.route renders into mainPanelArea, so
+// clicking a channel is a real navigation and the back button steps back through the channels
+// you've visited instead of leaving the app. No framework file is touched.
 (function() {
     var fn = window.fn;
 
     var channelResource = null;
-    var selectedChannelId = null;
     var sidebarArea = null;
-    var mainPanelArea = null;
+    var mainRouteEl = null;
+
+    function channelIdFromHash() {
+        var m = location.hash.match(/^#\/channel\/(\d+)$/);
+        return m ? Number(m[1]) : null;
+    }
 
     function refreshSidebar() {
         fn.component.refresh({ name : 'sidebar', parent : sidebarArea });
     }
 
-    function refreshMainPanel() {
-        fn.component.refresh({ name : 'main-panel', parent : mainPanelArea });
-    }
-
     function selectChannel(id) {
-        selectedChannelId = id;
-        refreshSidebar();
-        refreshMainPanel();
+        location.hash = '#/channel/' + id;
     }
 
     fn.component.layout.set({
@@ -203,7 +204,7 @@
                 style : {
                     display : 'flex', justifyContent : 'space-between', alignItems : 'center',
                     padding : '8px 16px', cursor : 'pointer', color : '#fff', fontSize : '14px',
-                    background : channel.id === selectedChannelId ? '#1164a3' : 'transparent',
+                    background : channel.id === channelIdFromHash() ? '#1164a3' : 'transparent',
                 },
                 event : { click : function() { selectChannel(channel.id); } },
             });
@@ -282,7 +283,7 @@
                 }
                 fn.data.insert({ key : 'message', data : { channelId : opt.channelId, author : 'You', body : text } });
                 input.value = '';
-                refreshMainPanel();
+                mainRouteEl.refresh();
             }
 
             var input = fn.element.create({
@@ -310,9 +311,9 @@
         layout : function() {
             var panel = fn.element.create({ tagName : 'div', style : { display : 'flex', flexDirection : 'column', height : '100%' } });
 
-            var channelRow = selectedChannelId ? fn.data.select({ key : 'channel', id : selectedChannelId }) : null;
+            var channelId = channelIdFromHash();
+            var channelRow = channelId !== null ? fn.data.select({ key : 'channel', id : channelId }) : null;
             if (!channelRow) {
-                selectedChannelId = null;
                 fn.element.create({
                     tagName : 'div', text : 'Select a channel to start chatting',
                     style : { margin : 'auto', color : '#8a8a8a', fontSize : '14px' },
@@ -329,12 +330,12 @@
 
             var feed = fn.element.create({ tagName : 'div', style : { flex : '1', overflow : 'auto', padding : '16px' }, parent : panel });
             fn.util.selectFlat({ key : 'message' })
-                .filter(function(message) { return message.channelId === selectedChannelId; })
+                .filter(function(message) { return message.channelId === channelId; })
                 .forEach(function(message) {
                     fn.component.create({ name : 'message-bubble', message : message, parent : feed });
                 });
 
-            fn.component.create({ name : 'composer', channelId : selectedChannelId, channelName : channelRow.data.name, parent : panel });
+            fn.component.create({ name : 'composer', channelId : channelId, channelName : channelRow.data.name, parent : panel });
 
             return panel;
         }
@@ -351,10 +352,14 @@
             });
 
             sidebarArea = fn.element.create({ tagName : 'div', style : { width : '240px', flexShrink : '0', background : '#3f0e40', overflow : 'auto' }, parent : shell });
-            mainPanelArea = fn.element.create({ tagName : 'div', style : { flex : '1', display : 'flex', flexDirection : 'column', overflow : 'hidden' }, parent : shell });
-
             fn.component.create({ name : 'sidebar', parent : sidebarArea });
-            fn.component.create({ name : 'main-panel', parent : mainPanelArea });
+
+            var mainPanelArea = fn.element.create({ tagName : 'div', style : { flex : '1', display : 'flex', flexDirection : 'column', overflow : 'hidden' }, parent : shell });
+            mainRouteEl = fn.util.route({
+                resolve : function() { return 'main-panel'; },
+                parent : mainPanelArea,
+                onRoute : refreshSidebar,
+            });
 
             return shell;
         }
