@@ -50,7 +50,7 @@
     }
 
     var players = fn.data.select({ key : 'player' });
-    var player = players.length ? players[0] : fn.data.insert({ key : 'player', data : { name : 'Hunter', weaponLevel : 1, armorLevel : 1, gold : 20, ironOre : 0, hp : 70, potions : 1 } });
+    var player = players.length ? players[0] : fn.data.insert({ key : 'player', data : { name : 'Hunter', weaponLevel : 1, armorLevel : 1, gold : 20, ironOre : 0, ironIngot : 0, hp : 70, potions : 1 } });
 
     fn.component.create({
         name : 'game',

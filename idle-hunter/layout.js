@@ -1,25 +1,28 @@
 // Idle Hunter -- a dark-fantasy idle RPG built on fn.js + fn.util.js. No level/XP concept for
 // the player at all: only Attack, Defense, and HP, all derived purely from weapon/armor level
 // (attackOf/defenseOf/maxHp below) and moved only when a Shop upgrade is actually bought. The
-// player picks one of 10 seeded Ground rows (their monster stats scale with `huntLevel`) and then
-// hunts continuously -- resolveTick fires on a setInterval once a ground is entered and keeps
-// firing, unattended, until Stop Hunting is clicked, which is the only thing that clears it. Each
-// tick is real combat: the player's Attack damages a persistent per-encounter monster HP pool
+// player picks a Ground from a `<select>` (10 seeded rows, monster stats scaling with `huntLevel`)
+// and then hunts continuously -- resolveTick fires on a setInterval once a ground is entered and
+// keeps firing, unattended, until Stop Hunting is clicked, which is the only thing that clears it.
+// Each tick is real combat: the player's Attack damages a persistent per-encounter monster HP pool
 // (killing it drops Iron Ore + gold and spawns the next one), and if the monster survives it hits
-// back for real damage against the player's own HP. A potion auto-drinks itself the instant it
-// would otherwise be a killing blow (or the player is left with no potions and gets forced back to
-// town); potions can also be drunk on demand from the stat bar. Iron Ore is inert until sold at
-// the Shop, so "hunt for ore -> sell -> upgrade -> hunt a harder ground" is a real, closed loop.
-// The UI itself is now a bottom tab bar (Hunt/Shop/Log) under a persistent stat bar, matching
-// `crm/`'s tab-bar look-and-feel but switched with the same module-scope-var + fn.component.refresh
-// convention the rest of this file already uses for `activeGroundId`, rather than importing
-// `crm/`'s hash router -- there's nothing here worth bookmarking or deep-linking, so that would be
-// machinery this app doesn't need. HuntLog is a real growing resource worth paging through
-// (list/pagination, restyled but otherwise unchanged from the reference implementation); Ground is
-// only ever entered, never edited, so it gets its own `ground-card` grid instead of `list` (same
-// reasoning `team-chat/`'s `channel-item` used); Player is CRUD'd through the usual
-// popup/form/save-btn only for its name (the Rename button) -- gold/ore/hp/weaponLevel/armorLevel/
-// potions are all game state a form should never let the player type in directly.
+// back for real damage against the player's own HP. Potions are never a manual reflex: the instant
+// a tick would leave the player at or below `potionThreshold` of max HP, one is auto-drunk (a
+// manual Use Potion button on the stat bar exists too, for topping off before a hunt) -- with none
+// left, the player is defeated and forced back to town. Iron Ore is inert until either sold
+// directly or combined (the Bag tab) into a higher-value Iron Ingot, so "hunt for ore -> combine ->
+// sell -> upgrade -> hunt a harder ground" is a real, closed loop. The UI is a bottom tab bar
+// (Hunt/Bag/Shop/Log) under a persistent stat bar, switched with the same module-scope-var +
+// fn.component.refresh convention the rest of this file already uses for `activeGroundId`, rather
+// than importing `crm/`'s hash router -- there's nothing here worth bookmarking or deep-linking, so
+// that would be machinery this app doesn't need. All text in the shell is centered via one
+// `textAlign` on the shell/popup root, inherited down, rather than being set per element. HuntLog
+// is a real growing resource worth paging through (list/pagination, restyled but otherwise
+// unchanged from the reference implementation); Ground is only ever entered, never edited, so a
+// plain `<select>` + Enter button covers it without needing `list`/`pagination` or a per-row
+// component at all; Player is CRUD'd through the usual popup/form/save-btn only for its name (the
+// Rename button) -- gold/ore/ingots/hp/weaponLevel/armorLevel/potions are all game state a form
+// should never let the player type in directly.
 (function() {
     var fn = window.fn;
 
@@ -48,8 +51,11 @@
     }
 
     var orePrice = 5;
+    var ingotPrice = 30;
+    var oreToIngot = 5;
     var potionPrice = 15;
     var potionHeal = 40;
+    var potionThreshold = 0.4;
 
     function randInt(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -106,8 +112,8 @@
         var dmgTaken = Math.max(1, ground.data.monsterAttack - defenseOf(player));
         var hp = player.data.hp - dmgTaken;
         var usedPotion = false;
-        if (hp <= 0 && player.data.potions > 0) {
-            hp = Math.min(maxHp(player), potionHeal);
+        if (hp <= maxHp(player) * potionThreshold && player.data.potions > 0) {
+            hp = Math.min(maxHp(player), hp + potionHeal);
             usedPotion = true;
         }
         hp = Math.max(0, hp);
@@ -118,7 +124,7 @@
         });
         fn.data.insert({
             key : 'huntLog',
-            data : { ground : ground.data.name, result : usedPotion ? 'Potion' : (hp <= 0 ? 'Defeat' : 'Hit'), dmgDealt : dmgDealt, dmgTaken : dmgTaken, ore : 0, gold : 0 },
+            data : { ground : ground.data.name, result : hp <= 0 ? 'Defeat' : (usedPotion ? 'Potion' : 'Hit'), dmgDealt : dmgDealt, dmgTaken : dmgTaken, ore : 0, gold : 0 },
         });
 
         if (hp <= 0) {
@@ -156,6 +162,18 @@
         refreshScreen();
     }
 
+    function combineOreToIngot() {
+        var player = getPlayer();
+        if (player.data.ironOre < oreToIngot) {
+            return;
+        }
+        fn.data.update({
+            key : 'player', id : player.id,
+            data : Object.assign({}, player.data, { ironOre : player.data.ironOre - oreToIngot, ironIngot : player.data.ironIngot + 1 }),
+        });
+        refreshScreen();
+    }
+
     function openRename() {
         var player = getPlayer();
         fn.component.create({
@@ -186,7 +204,7 @@
                 style : {
                     position : 'fixed', top : '70px', left : '50%', transform : 'translateX(-50%)',
                     width : '320px', background : panelBg, color : gold,
-                    border : '1px solid ' + dim, borderRadius : '6px', font : '14px/1.5 ' + appFont,
+                    border : '1px solid ' + dim, borderRadius : '6px', font : '14px/1.5 ' + appFont, textAlign : 'center',
                 },
             });
 
@@ -486,38 +504,17 @@
     });
 
     fn.component.layout.set({
-        name : 'ground-card',
-        layout : function(opt = {}) {
-            var ground = opt.ground;
-            var card = fn.element.create({
-                tagName : 'div',
-                style : {
-                    border : '1px solid ' + dim, borderRadius : '6px', padding : '10px',
-                    cursor : 'pointer', background : panelBg,
-                },
-                event : { click : function() { enterGround(ground.id); } },
-            });
-            fn.element.create({ tagName : 'div', text : ground.name, style : { fontWeight : '700', fontSize : '13px' }, parent : card });
-            fn.element.create({ tagName : 'div', text : 'Lv.' + ground.huntLevel, style : { fontSize : '12px', color : dim, marginTop : '2px' }, parent : card });
-            fn.element.create({ tagName : 'div', text : 'ATK ' + ground.monsterAttack + ' / DEF ' + ground.monsterDefense, style : { fontSize : '11px', color : dim }, parent : card });
-            return card;
-        }
-    });
-
-    fn.component.layout.set({
         name : 'stat-bar',
         layout : function() {
             var player = getPlayer();
             var bar = fn.element.create({ tagName : 'div', style : { padding : '16px', borderBottom : '1px solid ' + dim } });
 
-            var topRow = fn.element.create({ tagName : 'div', style : { display : 'flex', justifyContent : 'space-between', alignItems : 'flex-start' }, parent : bar });
-            var left = fn.element.create({ tagName : 'div', parent : topRow });
-            fn.element.create({ tagName : 'div', text : player.data.name, style : { fontWeight : '700', fontSize : '18px' }, parent : left });
-            fn.element.create({ tagName : 'div', text : 'ATK ' + attackOf(player) + '  DEF ' + defenseOf(player), style : { fontSize : '13px', color : dim, marginTop : '2px' }, parent : left });
+            fn.element.create({ tagName : 'div', text : player.data.name, style : { fontWeight : '700', fontSize : '18px' }, parent : bar });
+            fn.element.create({ tagName : 'div', text : 'ATK ' + attackOf(player) + '  DEF ' + defenseOf(player), style : { fontSize : '13px', color : dim, marginTop : '2px' }, parent : bar });
             fn.element.create({
                 tagName : 'button', attribute : { type : 'button' }, text : 'Rename',
-                style : { padding : '6px 12px', background : bg, color : gold, border : '1px solid ' + dim, borderRadius : '4px', cursor : 'pointer' },
-                event : { click : openRename }, parent : topRow,
+                style : { marginTop : '8px', padding : '6px 12px', background : bg, color : gold, border : '1px solid ' + dim, borderRadius : '4px', cursor : 'pointer' },
+                event : { click : openRename }, parent : bar,
             });
 
             var hpRow = fn.element.create({ tagName : 'div', style : { marginTop : '10px' }, parent : bar });
@@ -526,13 +523,12 @@
             var pct = Math.max(0, Math.min(100, player.data.hp / maxHp(player) * 100));
             fn.element.create({ tagName : 'div', style : { width : pct + '%', height : '100%', background : pct > 30 ? win : loss }, parent : track });
 
-            var bottomRow = fn.element.create({ tagName : 'div', style : { display : 'flex', justifyContent : 'space-between', alignItems : 'center', marginTop : '10px' }, parent : bar });
-            fn.element.create({ tagName : 'div', text : 'Gold ' + player.data.gold + '  Ore ' + player.data.ironOre + '  Potions ' + player.data.potions, style : { fontSize : '12px', color : dim }, parent : bottomRow });
+            fn.element.create({ tagName : 'div', text : 'Gold ' + player.data.gold + '  Ore ' + player.data.ironOre + '  Potions ' + player.data.potions, style : { fontSize : '12px', color : dim, marginTop : '10px' }, parent : bar });
             var canUse = player.data.potions > 0 && player.data.hp < maxHp(player);
             fn.element.create({
                 tagName : 'button', attribute : { type : 'button' }, text : 'Use Potion',
-                style : { padding : '6px 12px', background : bg, color : canUse ? gold : dim, border : '1px solid ' + dim, borderRadius : '4px', cursor : canUse ? 'pointer' : 'default' },
-                event : { click : usePotion }, parent : bottomRow,
+                style : { marginTop : '8px', padding : '6px 12px', background : bg, color : canUse ? gold : dim, border : '1px solid ' + dim, borderRadius : '4px', cursor : canUse ? 'pointer' : 'default' },
+                event : { click : usePotion }, parent : bar,
             });
 
             return bar;
@@ -550,7 +546,7 @@
                     display : 'flex', borderTop : '1px solid ' + dim, background : panelBg,
                 },
             });
-            [ { key : 'hunt', text : 'Hunt' }, { key : 'shop', text : 'Shop' }, { key : 'log', text : 'Log' } ].forEach(function(tab) {
+            [ { key : 'hunt', text : 'Hunt' }, { key : 'bag', text : 'Bag' }, { key : 'shop', text : 'Shop' }, { key : 'log', text : 'Log' } ].forEach(function(tab) {
                 fn.element.create({
                     tagName : 'button',
                     attribute : { type : 'button' },
@@ -573,10 +569,32 @@
         layout : function() {
             var wrap = fn.element.create({ tagName : 'div' });
             fn.element.create({ tagName : 'div', text : 'Hunting Grounds', style : { marginBottom : '8px', fontWeight : '700' }, parent : wrap });
-            var grid = fn.element.create({ tagName : 'div', style : { display : 'grid', gridTemplateColumns : 'repeat(2, 1fr)', gap : '10px' }, parent : wrap });
-            fn.util.selectFlat({ key : 'ground' }).forEach(function(ground) {
-                fn.component.create({ name : 'ground-card', ground : ground, parent : grid });
+
+            var grounds = fn.util.selectFlat({ key : 'ground' });
+            var select = fn.element.create({
+                tagName : 'select',
+                style : { width : '100%', padding : '10px', font : '14px ' + appFont, background : bg, color : gold, border : '1px solid ' + dim, borderRadius : '4px' },
+                parent : wrap,
             });
+            grounds.forEach(function(ground) {
+                fn.element.create({ tagName : 'option', attribute : { value : ground.id }, text : ground.name + ' (Lv.' + ground.huntLevel + ')', parent : select });
+            });
+
+            var preview = fn.element.create({ tagName : 'div', style : { fontSize : '12px', color : dim, marginTop : '8px' }, parent : wrap });
+            function updatePreview() {
+                var ground = grounds.find(function(g) { return g.id === Number(select.value); });
+                preview.textContent = 'Monster ATK ' + ground.monsterAttack + ' / DEF ' + ground.monsterDefense;
+            }
+            select.addEventListener('change', updatePreview);
+            updatePreview();
+
+            fn.element.create({
+                tagName : 'button', attribute : { type : 'button' }, text : 'Enter',
+                style : { marginTop : '12px', padding : '10px 16px', background : gold, color : bg, border : 'none', borderRadius : '4px', fontWeight : '700', cursor : 'pointer', width : '100%' },
+                event : { click : function() { enterGround(Number(select.value)); } },
+                parent : wrap,
+            });
+
             return wrap;
         }
     });
@@ -594,6 +612,18 @@
                 event : { click : function() {
                     var p = getPlayer();
                     fn.data.update({ key : 'player', id : p.id, data : Object.assign({}, p.data, { gold : p.data.gold + p.data.ironOre * orePrice, ironOre : 0 }) });
+                    refreshScreen();
+                } },
+                parent : wrap,
+            });
+
+            fn.element.create({ tagName : 'div', text : 'Iron Ingot: ' + player.data.ironIngot + ' (sells for ' + ingotPrice + ' gold each)', style : { marginTop : '12px', marginBottom : '8px' }, parent : wrap });
+            fn.element.create({
+                tagName : 'button', attribute : { type : 'button' }, text : 'Sell All Ingots',
+                style : { padding : '8px 14px', background : gold, color : bg, border : 'none', borderRadius : '4px', fontWeight : '700', cursor : 'pointer', width : '100%' },
+                event : { click : function() {
+                    var p = getPlayer();
+                    fn.data.update({ key : 'player', id : p.id, data : Object.assign({}, p.data, { gold : p.data.gold + p.data.ironIngot * ingotPrice, ironIngot : 0 }) });
                     refreshScreen();
                 } },
                 parent : wrap,
@@ -662,6 +692,32 @@
     });
 
     fn.component.layout.set({
+        name : 'bag-tab',
+        layout : function() {
+            var player = getPlayer();
+            var wrap = fn.element.create({ tagName : 'div' });
+            fn.element.create({ tagName : 'div', text : 'Bag', style : { marginBottom : '8px', fontWeight : '700' }, parent : wrap });
+
+            fn.element.create({ tagName : 'div', text : 'Iron Ore: ' + player.data.ironOre, style : { marginBottom : '4px' }, parent : wrap });
+            fn.element.create({ tagName : 'div', text : 'Iron Ingot: ' + player.data.ironIngot, style : { marginBottom : '4px' }, parent : wrap });
+            fn.element.create({ tagName : 'div', text : 'Potions: ' + player.data.potions, style : { marginBottom : '4px' }, parent : wrap });
+
+            fn.element.create({ tagName : 'div', style : { borderTop : '1px solid ' + dim, margin : '14px 0' }, parent : wrap });
+
+            var canCombine = player.data.ironOre >= oreToIngot;
+            fn.element.create({ tagName : 'div', text : 'Combine ' + oreToIngot + ' Iron Ore -> 1 Iron Ingot', style : { marginBottom : '6px' }, parent : wrap });
+            fn.element.create({
+                tagName : 'button', attribute : { type : 'button' }, text : 'Combine',
+                style : { padding : '8px 14px', background : canCombine ? gold : dim, color : bg, border : 'none', borderRadius : '4px', fontWeight : '700', cursor : canCombine ? 'pointer' : 'default', width : '100%' },
+                event : { click : combineOreToIngot },
+                parent : wrap,
+            });
+
+            return wrap;
+        }
+    });
+
+    fn.component.layout.set({
         name : 'log-tab',
         layout : function() {
             var wrap = fn.element.create({ tagName : 'div' });
@@ -679,7 +735,8 @@
             fn.component.create({ name : 'stat-bar', parent : wrap });
 
             var content = fn.element.create({ tagName : 'div', style : { padding : '16px' }, parent : wrap });
-            fn.component.create({ name : activeTab === 'shop' ? 'shop-tab' : activeTab === 'log' ? 'log-tab' : 'hunt-tab', parent : content });
+            var tabLayouts = { hunt : 'hunt-tab', bag : 'bag-tab', shop : 'shop-tab', log : 'log-tab' };
+            fn.component.create({ name : tabLayouts[activeTab], parent : content });
 
             fn.component.create({ name : 'tab-bar', parent : wrap });
             return wrap;
@@ -739,7 +796,7 @@
 
             var shell = fn.element.create({
                 tagName : 'div',
-                style : { maxWidth : '480px', margin : '0 auto', minHeight : '100vh', background : bg, color : gold, font : '14px/1.5 ' + appFont },
+                style : { maxWidth : '480px', margin : '0 auto', minHeight : '100vh', background : bg, color : gold, font : '14px/1.5 ' + appFont, textAlign : 'center' },
             });
 
             rootArea = fn.element.create({ tagName : 'div', parent : shell });
