@@ -542,11 +542,11 @@
     fn.component.layout.set({
         name : 'feed-box',
         layout : function() {
-            var wrap = fn.element.create({ tagName : 'div', style : { padding : '16px' } });
-            fn.element.create({ tagName : 'div', text : 'Activity', style : { fontWeight : '700', marginBottom : '8px' }, parent : wrap });
+            var wrap = fn.element.create({ tagName : 'div', style : { padding : '10px 16px' } });
+            fn.element.create({ tagName : 'div', text : 'Activity', style : { fontWeight : '700', fontSize : '12px', marginBottom : '4px' }, parent : wrap });
 
-            var box = fn.element.create({ tagName : 'div', style : { padding : '12px', border : '1px solid ' + dim, borderRadius : '6px', background : panelBg, fontSize : '13px', minHeight : '20px' }, parent : wrap });
-            var recent = fn.util.selectFlat({ key : 'huntLog' }).slice(-10).reverse();
+            var box = fn.element.create({ tagName : 'div', style : { padding : '6px 8px', border : '1px solid ' + dim, borderRadius : '6px', background : panelBg, fontSize : '11px' }, parent : wrap });
+            var recent = fn.util.selectFlat({ key : 'huntLog' }).slice(-3).reverse();
             if (recent.length === 0) {
                 fn.element.create({ tagName : 'div', text : 'No activity yet. Go hunt!', style : { color : dim }, parent : box });
                 return wrap;
