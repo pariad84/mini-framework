@@ -10,20 +10,23 @@
 // a tick would leave the player at or below `potionThreshold` of max HP, one is auto-drunk (a
 // manual Use Potion button on the stat bar exists too, for topping off before a hunt) -- with none
 // left, the player is defeated and forced back to town. Iron Ore is inert until either sold
-// directly or combined (the Bag tab) into a higher-value Iron Ingot, so "hunt for ore -> combine ->
-// sell -> upgrade -> hunt a harder ground" is a real, closed loop. The UI is a bottom tab bar
-// (Hunt/Bag/Shop/Log) under a persistent stat bar, switched with the same module-scope-var +
-// fn.component.refresh convention the rest of this file already uses for `activeGroundId`, rather
-// than importing `crm/`'s hash router -- there's nothing here worth bookmarking or deep-linking, so
-// that would be machinery this app doesn't need. Right below the stat bar (character info) sits a
-// shared `feed-box` -- a bordered text box of the most recent HuntLog activity -- reused as-is on
-// both the town screen and the hunting-ground screen instead of hunting-ground keeping its own
-// separate copy. HuntLog is a real growing resource worth paging through (list/pagination,
-// restyled but otherwise unchanged from the reference implementation); Ground is only ever
-// entered, never edited, so a plain `<select>` + Enter button covers it without needing
-// `list`/`pagination` or a per-row component at all; Player is CRUD'd through the usual
-// popup/form/save-btn only for its name (the Rename button) -- gold/ore/ingots/hp/weaponLevel/
-// armorLevel/potions are all game state a form should never let the player type in directly.
+// directly or combined (the Bag tab, a chosen quantity at once via a number input + a Max button
+// that fills in floor(ironOre / oreToIngot)) into a higher-value Iron Ingot, so "hunt for ore ->
+// combine -> sell -> upgrade -> hunt a harder ground" is a real, closed loop. `town` is the single
+// persistent shell -- stat bar, `feed-box` (a bordered text box of the most recent HuntLog
+// activity), tab content, then the bottom tab bar (Hunt/Bag/Shop/Log) -- and it's the only thing
+// `refreshScreen` ever re-renders, whether or not a hunt is in progress: `hunt-tab` itself branches
+// on `activeGroundId` to show either the ground picker or the live encounter (name/monster
+// HP/Stop Hunting), so the tab bar and stat bar never disappear mid-hunt the way a separate
+// full-screen "hunting" layout would make them. Tabs switch with the same module-scope-var +
+// fn.component.refresh convention this file already uses for `activeGroundId`, rather than
+// importing `crm/`'s hash router -- there's nothing here worth bookmarking or deep-linking, so that
+// would be machinery this app doesn't need. HuntLog is a real growing resource worth paging through
+// (list/pagination, restyled compact so a page fits without scrolling); Ground is only ever
+// entered, never edited, so a plain `<select>` + Enter button covers it without needing a per-row
+// component at all; Player is CRUD'd through the usual popup/form/save-btn only for its name (the
+// Rename button) -- gold/ore/ingots/hp/weaponLevel/armorLevel/potions are all game state a form
+// should never let the player type in directly.
 (function() {
     var fn = window.fn;
 
@@ -76,7 +79,7 @@
     }
 
     function refreshScreen() {
-        fn.component.refresh({ name : 'screen', parent : rootArea });
+        fn.component.refresh({ name : 'town', parent : rootArea });
     }
 
     function stopHuntLoop() {
@@ -163,14 +166,16 @@
         refreshScreen();
     }
 
-    function combineOreToIngot() {
+    function combineOreToIngot(qty) {
         var player = getPlayer();
-        if (player.data.ironOre < oreToIngot) {
+        var maxQty = Math.floor(player.data.ironOre / oreToIngot);
+        if (maxQty < 1) {
             return;
         }
+        var amount = Math.min(Math.max(1, qty), maxQty);
         fn.data.update({
             key : 'player', id : player.id,
-            data : Object.assign({}, player.data, { ironOre : player.data.ironOre - oreToIngot, ironIngot : player.data.ironIngot + 1 }),
+            data : Object.assign({}, player.data, { ironOre : player.data.ironOre - amount * oreToIngot, ironIngot : player.data.ironIngot + amount }),
         });
         refreshScreen();
     }
@@ -360,7 +365,7 @@
     });
 
     fn.component._.renderListTable = function(opt) {
-        var el = fn.element.create({ tagName : 'table', style : { width : '100%', borderCollapse : 'collapse' }, datas : opt.datas });
+        var el = fn.element.create({ tagName : 'table', style : { width : '100%', borderCollapse : 'collapse', fontSize : '11px' }, datas : opt.datas });
 
         var thead = fn.element.create({ tagName : 'thead', parent : el });
         var headRow = fn.element.create({ tagName : 'tr', parent : thead });
@@ -371,7 +376,7 @@
             fn.element.create({
                 tagName : 'th',
                 text : column.label || column.name,
-                style : { textAlign : 'left', padding : '6px 10px', borderBottom : '1px solid ' + dim, color : dim, fontWeight : 'normal' },
+                style : { textAlign : 'left', padding : '4px 6px', borderBottom : '1px solid ' + dim, color : dim, fontWeight : 'normal' },
                 parent : headRow,
             });
         });
@@ -403,7 +408,7 @@
                 if (!column.list) {
                     return;
                 }
-                var cell = fn.element.create({ tagName : 'td', style : { padding : '6px 10px', borderBottom : '1px solid #33230f' }, parent : row });
+                var cell = fn.element.create({ tagName : 'td', style : { padding : '4px 6px', borderBottom : '1px solid #33230f' }, parent : row });
                 if (column.list.render) {
                     var rendered = fn.render({ source : column.list.render, data : data });
                     if (rendered instanceof HTMLElement) {
@@ -463,14 +468,14 @@
         layout : function(opt = {}) {
             var bar = fn.element.create({
                 tagName : 'div',
-                style : { display : 'flex', justifyContent : 'space-between', alignItems : 'center', padding : '8px 0', color : gold },
+                style : { display : 'flex', justifyContent : 'space-between', alignItems : 'center', padding : '6px 0', color : gold },
             });
 
             fn.element.create({
                 tagName : 'button',
                 attribute : { type : 'button' },
                 text : 'Prev',
-                style : { padding : '6px 12px', background : bg, color : gold, border : '1px solid ' + dim, borderRadius : '4px', cursor : 'pointer', visibility : opt.page > 0 ? 'visible' : 'hidden' },
+                style : { padding : '4px 10px', fontSize : '11px', background : bg, color : gold, border : '1px solid ' + dim, borderRadius : '4px', cursor : 'pointer', visibility : opt.page > 0 ? 'visible' : 'hidden' },
                 event : { click : function(e) {
                     var list = e.target.closest('.__list');
                     list._.page = Math.max(0, list._.page - 1);
@@ -482,7 +487,7 @@
             fn.element.create({
                 tagName : 'div',
                 text : 'Page ' + (opt.page + 1) + ' of ' + opt.pageCount,
-                style : { color : dim, fontSize : '13px' },
+                style : { color : dim, fontSize : '11px' },
                 parent : bar,
             });
 
@@ -490,7 +495,7 @@
                 tagName : 'button',
                 attribute : { type : 'button' },
                 text : 'Next',
-                style : { padding : '6px 12px', background : bg, color : gold, border : '1px solid ' + dim, borderRadius : '4px', cursor : 'pointer', visibility : opt.page < opt.pageCount - 1 ? 'visible' : 'hidden' },
+                style : { padding : '4px 10px', fontSize : '11px', background : bg, color : gold, border : '1px solid ' + dim, borderRadius : '4px', cursor : 'pointer', visibility : opt.page < opt.pageCount - 1 ? 'visible' : 'hidden' },
                 event : { click : function(e) {
                     var list = e.target.closest('.__list');
                     var pageCount = Math.max(1, Math.ceil(list._.datas.length / list._.pageSize));
@@ -600,6 +605,19 @@
         name : 'hunt-tab',
         layout : function() {
             var wrap = fn.element.create({ tagName : 'div' });
+
+            if (activeGroundId) {
+                var ground = fn.data.select({ key : 'ground', id : activeGroundId });
+                fn.element.create({ tagName : 'div', text : ground.data.name + ' (Lv.' + ground.data.huntLevel + ')', style : { fontWeight : '700', fontSize : '18px' }, parent : wrap });
+                fn.element.create({ tagName : 'div', text : 'Monster HP ' + Math.max(0, currentMonsterHp) + ' / ' + monsterMaxHp(ground), style : { fontSize : '13px', color : dim, marginTop : '4px' }, parent : wrap });
+                fn.element.create({
+                    tagName : 'button', attribute : { type : 'button' }, text : 'Stop Hunting',
+                    style : { marginTop : '12px', padding : '10px 16px', background : gold, color : bg, border : 'none', borderRadius : '4px', fontWeight : '700', cursor : 'pointer' },
+                    event : { click : leaveGround }, parent : wrap,
+                });
+                return wrap;
+            }
+
             fn.element.create({ tagName : 'div', text : 'Hunting Grounds', style : { marginBottom : '8px', fontWeight : '700' }, parent : wrap });
 
             var grounds = fn.util.selectFlat({ key : 'ground' });
@@ -736,13 +754,27 @@
 
             fn.element.create({ tagName : 'div', style : { borderTop : '1px solid ' + dim, margin : '14px 0' }, parent : wrap });
 
-            var canCombine = player.data.ironOre >= oreToIngot;
-            fn.element.create({ tagName : 'div', text : 'Combine ' + oreToIngot + ' Iron Ore -> 1 Iron Ingot', style : { marginBottom : '6px' }, parent : wrap });
+            var maxCraftable = Math.floor(player.data.ironOre / oreToIngot);
+            fn.element.create({ tagName : 'div', text : 'Combine ' + oreToIngot + ' Iron Ore -> 1 Iron Ingot (max ' + maxCraftable + ' now)', style : { marginBottom : '6px' }, parent : wrap });
+
+            var row = fn.element.create({ tagName : 'div', style : { display : 'flex', gap : '8px' }, parent : wrap });
+            var qtyInput = fn.element.create({
+                tagName : 'input',
+                attribute : { type : 'number', min : '1', max : String(Math.max(1, maxCraftable)), value : '1' },
+                style : { width : '64px', padding : '8px', font : '14px ' + appFont, background : bg, color : gold, border : '1px solid ' + dim, borderRadius : '4px' },
+                parent : row,
+            });
+            fn.element.create({
+                tagName : 'button', attribute : { type : 'button' }, text : 'Max',
+                style : { padding : '8px 12px', background : bg, color : gold, border : '1px solid ' + dim, borderRadius : '4px', cursor : 'pointer' },
+                event : { click : function() { qtyInput.value = String(Math.max(1, maxCraftable)); } },
+                parent : row,
+            });
             fn.element.create({
                 tagName : 'button', attribute : { type : 'button' }, text : 'Combine',
-                style : { padding : '8px 14px', background : canCombine ? gold : dim, color : bg, border : 'none', borderRadius : '4px', fontWeight : '700', cursor : canCombine ? 'pointer' : 'default', width : '100%' },
-                event : { click : combineOreToIngot },
-                parent : wrap,
+                style : { flex : '1', padding : '8px 14px', background : maxCraftable > 0 ? gold : dim, color : bg, border : 'none', borderRadius : '4px', fontWeight : '700', cursor : maxCraftable > 0 ? 'pointer' : 'default' },
+                event : { click : function() { combineOreToIngot(Number(qtyInput.value) || 1); } },
+                parent : row,
             });
 
             return wrap;
@@ -755,7 +787,7 @@
             var wrap = fn.element.create({ tagName : 'div' });
             fn.element.create({ tagName : 'div', text : 'Hunt Log', style : { marginBottom : '8px', fontWeight : '700' }, parent : wrap });
             var logDatas = fn.util.selectFlat({ key : 'huntLog' }).slice().reverse();
-            fn.component.create({ name : 'list', resource : huntLogResource, datas : logDatas, readonly : true, parent : wrap });
+            fn.component.create({ name : 'list', resource : huntLogResource, datas : logDatas, readonly : true, pageSize : 5, parent : wrap });
             return wrap;
         }
     });
@@ -772,37 +804,6 @@
             fn.component.create({ name : tabLayouts[activeTab], parent : content });
 
             fn.component.create({ name : 'tab-bar', parent : wrap });
-            return wrap;
-        }
-    });
-
-    fn.component.layout.set({
-        name : 'hunting-ground',
-        layout : function() {
-            var ground = fn.data.select({ key : 'ground', id : activeGroundId });
-            var wrap = fn.element.create({ tagName : 'div' });
-            fn.component.create({ name : 'stat-bar', parent : wrap });
-            fn.component.create({ name : 'feed-box', parent : wrap });
-
-            var content = fn.element.create({ tagName : 'div', style : { padding : '0 16px 16px' }, parent : wrap });
-            fn.element.create({ tagName : 'div', text : ground.data.name + ' (Lv.' + ground.data.huntLevel + ')', style : { fontWeight : '700', fontSize : '18px' }, parent : content });
-            fn.element.create({ tagName : 'div', text : 'Monster HP ' + Math.max(0, currentMonsterHp) + ' / ' + monsterMaxHp(ground), style : { fontSize : '13px', color : dim, marginTop : '4px' }, parent : content });
-
-            fn.element.create({
-                tagName : 'button', attribute : { type : 'button' }, text : 'Stop Hunting',
-                style : { marginTop : '12px', padding : '10px 16px', background : gold, color : bg, border : 'none', borderRadius : '4px', fontWeight : '700', cursor : 'pointer' },
-                event : { click : leaveGround }, parent : content,
-            });
-
-            return wrap;
-        }
-    });
-
-    fn.component.layout.set({
-        name : 'screen',
-        layout : function() {
-            var wrap = fn.element.create({ tagName : 'div' });
-            fn.component.create({ name : activeGroundId ? 'hunting-ground' : 'town', parent : wrap });
             return wrap;
         }
     });
