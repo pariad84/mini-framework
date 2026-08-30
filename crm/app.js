@@ -116,30 +116,18 @@
         }
     });
 
-    fn.component.layout.set({
-        name : 'router',
-        layout : function(opt = {}) {
-            var container = fn.element.create({ tagName : 'div' });
-            var pageArea = fn.element.create({ tagName : 'div', parent : container });
-            var tabBarArea = fn.element.create({ tagName : 'div', parent : container });
-            function render() {
-                var name = opt.routes[location.hash] || opt.routes['#/'];
-                fn.component.refresh({ name : name, parent : pageArea });
-                fn.component.refresh({ name : 'tab-bar', tabs : opt.tabs, parent : tabBarArea });
-            }
-            window.addEventListener('hashchange', render);
-            render();
-            return container;
-        }
-    });
-
-    fn.component.create({
-        name : 'router',
+    var tabs = [
+        { href : '#/', text : 'Contacts' },
+        { href : '#/deals', text : 'Deals' },
+    ];
+    var tabBarArea = fn.element.create({ tagName : 'div', parent : document.body });
+    function refreshTabBar() {
+        fn.component.refresh({ name : 'tab-bar', tabs : tabs, parent : tabBarArea });
+    }
+    fn.util.route({
         routes : { '#/' : 'contacts-page', '#/deals' : 'deals-page' },
-        tabs : [
-            { href : '#/', text : 'Contacts' },
-            { href : '#/deals', text : 'Deals' },
-        ],
+        defaultHash : '#/',
         parent : document.body,
+        onRoute : refreshTabBar,
     });
 })();

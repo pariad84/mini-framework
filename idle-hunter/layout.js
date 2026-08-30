@@ -18,10 +18,12 @@
 // `refreshScreen` ever re-renders, whether or not a hunt is in progress: `hunt-tab` itself branches
 // on `activeGroundId` to show either the ground picker or the live encounter (name/monster
 // HP/Stop Hunting), so the tab bar and stat bar never disappear mid-hunt the way a separate
-// full-screen "hunting" layout would make them. Tabs switch with the same module-scope-var +
-// fn.component.refresh convention this file already uses for `activeGroundId`, rather than
-// importing `crm/`'s hash router -- there's nothing here worth bookmarking or deep-linking, so that
-// would be machinery this app doesn't need. HuntLog is a real growing resource worth paging through
+// full-screen "hunting" layout would make them. Which tab is active is a real route, though, via
+// fn.util.route ('#/hunt', '#/bag', '#/shop', '#/log', defaulting to '#/hunt'): tapping a tab is a
+// real navigation, so the back button steps back through tabs instead of leaving the app -- it
+// doesn't touch `activeGroundId` at all, since which ground you're hunting (or mid-hunt at all)
+// isn't itself a distinct screen, just state the Hunt tab's own render branches on, the same way
+// it always has. HuntLog is a real growing resource worth paging through
 // (list/pagination, restyled compact so a page fits without scrolling); Ground is only ever
 // entered, never edited, so a plain `<select>` + Enter button covers it without needing a per-row
 // component at all; Player is CRUD'd through the usual popup/form/save-btn only for its name (the
@@ -68,18 +70,23 @@
     var playerResource = null;
     var huntLogResource = null;
     var playerId = null;
-    var rootArea = null;
+    var routeEl = null;
     var activeGroundId = null;
-    var activeTab = 'hunt';
     var currentMonsterHp = null;
     var huntTimer = null;
+    var tabKeys = [ 'hunt', 'bag', 'shop', 'log' ];
+
+    function currentTab() {
+        var key = location.hash.replace('#/', '');
+        return tabKeys.indexOf(key) !== -1 ? key : 'hunt';
+    }
 
     function getPlayer() {
         return fn.data.select({ key : 'player', id : playerId });
     }
 
     function refreshScreen() {
-        fn.component.refresh({ name : 'town', parent : rootArea });
+        routeEl.refresh();
     }
 
     function stopHuntLoop() {
@@ -590,10 +597,10 @@
                     text : tab.text,
                     style : {
                         flex : '1', padding : '14px 0', background : 'transparent', border : 'none',
-                        color : activeTab === tab.key ? gold : dim, fontWeight : activeTab === tab.key ? '700' : '400',
+                        color : currentTab() === tab.key ? gold : dim, fontWeight : currentTab() === tab.key ? '700' : '400',
                         font : '14px ' + appFont, cursor : 'pointer',
                     },
-                    event : { click : function() { activeTab = tab.key; refreshScreen(); } },
+                    event : { click : function() { location.hash = '#/' + tab.key; } },
                     parent : bar,
                 });
             });
@@ -801,7 +808,7 @@
 
             var content = fn.element.create({ tagName : 'div', style : { padding : '16px' }, parent : wrap });
             var tabLayouts = { hunt : 'hunt-tab', bag : 'bag-tab', shop : 'shop-tab', log : 'log-tab' };
-            fn.component.create({ name : tabLayouts[activeTab], parent : content });
+            fn.component.create({ name : tabLayouts[currentTab()], parent : content });
 
             fn.component.create({ name : 'tab-bar', parent : wrap });
             return wrap;
@@ -820,8 +827,7 @@
                 style : { maxWidth : '480px', margin : '0 auto', minHeight : '100vh', background : bg, color : gold, font : '14px/1.5 ' + appFont },
             });
 
-            rootArea = fn.element.create({ tagName : 'div', parent : shell });
-            refreshScreen();
+            routeEl = fn.util.route({ resolve : function() { return 'town'; }, parent : shell });
 
             return shell;
         }

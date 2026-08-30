@@ -65,8 +65,8 @@
     fn.component.create({
         name : 'phone',
         apps : [
-            { icon : '👤', label : 'Contacts', launch : openContacts },
-            { icon : '📝', label : 'Notes', launch : openNotes },
+            { key : 'contacts', icon : '👤', label : 'Contacts', launch : openContacts },
+            { key : 'notes', icon : '📝', label : 'Notes', launch : openNotes },
         ],
         parent : document.body,
     });
