@@ -11,10 +11,10 @@ implements itself in its own `layout.js` (see "Example folder structure" below).
 `fn.component.layout.js`, also at the repo root, is a reference implementation of those
 conventions -- not a framework file and not a dependency any example currently loads, kept here
 for later use. `fn.util.js`, also at the repo root, is different: `fn.util.selectFlat`/
-`fn.util.newButton`/`fn.util.saveForm` are plain CRUD/UI-wiring logic with no reason to vary by
-example the way a layout's look does, so every example does load it. Example apps live in their
-own folders at the repo root, listed from `index.html` -- currently `crm/`, `windows-os/`,
-`android-phone/`, `team-chat/`, and `idle-hunter/`.
+`fn.util.newButton`/`fn.util.saveForm`/`fn.util.route` are plain CRUD/UI-wiring logic with no
+reason to vary by example the way a layout's look does, so every example does load it. Example
+apps live in their own folders at the repo root, listed from `index.html` -- currently `crm/`,
+`windows-os/`, `android-phone/`, `team-chat/`, `idle-hunter/`, and `message-board/`.
 
 ## The three things that matter most
 
@@ -67,16 +67,17 @@ own folders at the repo root, listed from `index.html` -- currently `crm/`, `win
   `pageSize`, for any resource the app browses as a list -- `team-chat/` has none, since it
   browses channels through its own `sidebar`/`channel-item` instead); copy from
   `fn.component.layout.js` as a starting point and re-theme only what the example's look needs
-  to change (see `crm/`, `windows-os/`, `android-phone/`, `team-chat/`, `idle-hunter/`). Always
-  name that file `layout.js` — not `mobile-layout.js`/`desktop-chrome.js`/etc. — so every example's
-  layouts live in a file with the same name. `form` must define `.save()` (insert-or-update
-  against `fn.data`, using the form's own `el._.resource`/`el._.data` -- this is the form's
-  business, not save-btn's or `fn.util.js`'s, since a real backend might need it to differ per
-  resource) alongside the existing `.getData()`. Use `fn.util.js`'s helpers
-  (`fn.util.selectFlat`/`fn.util.newButton`/`fn.util.saveForm`) instead of re-typing the same
-  CRUD wiring into `app.js`/`layout.js` — `save-btn` should only decide how its popup/window/
-  screen closes and pass that as `fn.util.saveForm`'s `onSaved`, not re-implement the
-  call-form.save()-then-refresh part.
+  to change (see `crm/`, `windows-os/`, `android-phone/`, `team-chat/`, `idle-hunter/`,
+  `message-board/`). Always name that file `layout.js` — not `mobile-layout.js`/
+  `desktop-chrome.js`/etc. — so every example's layouts live in a file with the same name.
+  `form` must define `.save()` (insert-or-update against `fn.data`, using the form's own
+  `el._.resource`/`el._.data` -- this is the form's business, not save-btn's or `fn.util.js`'s,
+  since a real backend might need it to differ per resource) alongside the existing
+  `.getData()`. Use `fn.util.js`'s helpers (`fn.util.selectFlat`/`fn.util.newButton`/
+  `fn.util.saveForm`/`fn.util.route`) instead of re-typing the same CRUD/navigation wiring into
+  `app.js`/`layout.js` — `save-btn` should only decide how its popup/window/screen closes and
+  pass that as `fn.util.saveForm`'s `onSaved`, not re-implement the call-form.save()-then-refresh
+  part.
 - **When to add to `fn.util.js`**: unlike `fn.js` (see "Adding to the framework" below), this
   doesn't need a second real use first — the current examples already are that. Add
   something here only when it's logic with no reason to differ between examples (compare
