@@ -175,23 +175,6 @@
                         style : { width : '100%', minHeight : column.form.height || '60px', resize : 'vertical' },
                         parent : valueCell,
                     });
-
-                    var parsed;
-                    try {
-                        parsed = JSON.parse(opt.data[column.name]);
-                    } catch (e) {
-                        parsed = undefined;
-                    }
-                    if (parsed !== undefined && parsed !== null && typeof parsed === 'object') {
-                        var preview = fn.component._.jsonPreview(parsed);
-                        fn.component.create({
-                            name : 'list',
-                            resource : { key : '', columns : preview.columns },
-                            datas : preview.datas,
-                            readonly : true,
-                            parent : valueCell,
-                        });
-                    }
                 } else {
                     input = fn.element.create({ tagName : 'input', attribute : { type : 'text', name : column.name }, parent : valueCell });
                 }

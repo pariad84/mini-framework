@@ -126,23 +126,6 @@
                         style : Object.assign({}, inputStyle, { minHeight : column.form.height || '80px', resize : 'vertical' }),
                         parent : field,
                     });
-
-                    var parsed;
-                    try {
-                        parsed = JSON.parse(opt.data[column.name]);
-                    } catch (e) {
-                        parsed = undefined;
-                    }
-                    if (parsed !== undefined && parsed !== null && typeof parsed === 'object') {
-                        var preview = fn.component._.jsonPreview(parsed);
-                        fn.component.create({
-                            name : 'list',
-                            resource : { key : '', columns : preview.columns },
-                            datas : preview.datas,
-                            readonly : true,
-                            parent : field,
-                        });
-                    }
                 } else {
                     input = fn.element.create({ tagName : 'input', attribute : { type : 'text', name : column.name }, style : inputStyle, parent : field });
                 }
