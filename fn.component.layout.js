@@ -38,6 +38,7 @@
 
             popup.content = content;
             popup._.caller = opt.caller;
+            popup._.fields = opt.fields;
 
             if (opt.render) {
                 opt.render(popup);
