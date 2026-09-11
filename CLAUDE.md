@@ -2,8 +2,10 @@
 
 A minimal, schema-driven CRUD framework built around seven essentials (see README.md for the
 list). The framework is one file at the repo root: `fn.js` (the core primitives --
-`fn.element.create`, the layout registry, `fn.data.*`, `render`). It knows nothing about any
-specific app. The split is a hard rule: `fn.js` must never reference anything app-specific (a
+`fn.element.create`, the layout registry, `fn.data.*`, `render`). Its canonical source is
+[pariad84/fn](https://github.com/pariad84/fn); the copy here is kept in sync so examples in this
+repo can keep loading it locally without a build step -- change `fn.js` in the `fn` repo first,
+then copy the result here. It knows nothing about any specific app. The split is a hard rule: `fn.js` must never reference anything app-specific (a
 resource key, a field name, a UI label), and any app built on top must never reach past
 `fn.component.create`/`fn.data.*`/`fn.element.create` to touch the DOM or storage directly.
 `fn.js` alone doesn't give you `popup`/`form`/`list`/etc. -- those are conventions each app

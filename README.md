@@ -13,7 +13,9 @@ A minimal, schema-driven CRUD framework built around seven essentials:
 No build step, no dependencies. The framework is one file, `fn.js` (essentials #1-3, #5) --
 essentials #4, #6, #7 are conventions (schema-driven `form`/`list`, resource-reference selects,
 `opt`-based self-contained components) that every app implements for itself, the same shape each
-time. `fn.component.layout.js`, also at the repo root, is a reference implementation of
+time. `fn.js`'s canonical source is [pariad84/fn](https://github.com/pariad84/fn); the copy here
+is a synced vendor copy so the examples below can keep loading it locally.
+`fn.component.layout.js`, also at the repo root, is a reference implementation of
 `popup`/`close-btn`/`save-btn`/`form`/`list`/`pagination` built that way -- not a dependency any
 example currently loads, kept here for later use. `fn.util.js` is different: it's plain CRUD/UI
 logic (`fn.util.selectFlat`, `fn.util.newButton`, `fn.util.saveForm`, `fn.util.route`) that has no
