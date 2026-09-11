@@ -17,10 +17,11 @@
                     display : 'flex',
                     flexDirection : 'column',
                     minWidth : '280px',
-                    background : '#1e2128',
-                    color : '#e8eaed',
-                    border : '1px solid #3a3f4b',
+                    background : '#ffffff',
+                    color : '#1a1a1a',
+                    border : '1px solid #d7dae0',
                     borderRadius : '8px',
+                    boxShadow : '0 8px 24px rgba(0, 0, 0, 0.15)',
                     font : "13px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
                 },
             });
@@ -28,7 +29,7 @@
             var header = fn.element.create({
                 parent : popup,
                 tagName : 'div',
-                style : { display : 'flex', justifyContent : 'space-between', padding : '8px 12px', borderBottom : '1px solid #3a3f4b' },
+                style : { display : 'flex', justifyContent : 'space-between', padding : '8px 12px', borderBottom : '1px solid #e4e6ea' },
             });
             fn.element.create({ parent : header, tagName : 'div', style : { fontWeight : '600' }, text : opt.title || 'Popup' });
             fn.component.create({ name : 'close-btn', parent : header });
