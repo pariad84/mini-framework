@@ -38,8 +38,6 @@
             var content = fn.element.create({ parent : popup, tagName : 'div', style : { padding : '16px' } });
 
             popup.content = content;
-            popup._.resource = opt.resource;
-            popup._.data = opt.data;
             popup._.caller = opt.caller;
 
             if (opt.render) {

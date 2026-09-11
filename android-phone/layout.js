@@ -95,8 +95,6 @@
             var content = fn.element.create({ parent : screen, tagName : 'div', style : { padding : '12px', overflow : 'auto', flex : '1' } });
 
             screen.content = content;
-            screen._.resource = opt.resource;
-            screen._.data = opt.data;
             screen._.caller = opt.caller;
 
             if (opt.render) {

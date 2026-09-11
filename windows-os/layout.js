@@ -110,8 +110,6 @@
             var content = fn.element.create({ parent : popup, tagName : 'div', style : { padding : '10px', overflow : 'auto', flex : '1' } });
 
             popup.content = content;
-            popup._.resource = opt.resource;
-            popup._.data = opt.data;
             popup._.caller = opt.caller;
 
             if (opt.render) {
