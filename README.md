@@ -17,7 +17,10 @@ time. `fn.js`'s canonical source is [pariad84/fn](https://github.com/pariad84/fn
 is a synced vendor copy so the examples below can keep loading it locally.
 `fn.component.layout.js`, also at the repo root, is a reference implementation of
 `popup`/`close-btn`/`save-btn`/`form`/`list`/`pagination` built that way -- not a dependency any
-example currently loads, kept here for later use. `fn.util.js` is different: it's plain CRUD/UI
+example currently loads, kept here for later use. Its `popup`/`close-btn`/`save-btn` are
+themselves a synced vendor copy of [pariad84/fn](https://github.com/pariad84/fn)'s
+`fn.layout.js`, the same relationship `fn.js` has with that repo; `form`/`list`/`pagination`
+stay defined only here. `fn.util.js` is different: it's plain CRUD/UI
 logic (`fn.util.selectFlat`, `fn.util.newButton`, `fn.util.saveForm`, `fn.util.route`) that has no
 reason to vary between examples the way `popup`'s look does, so every example does load it,
 rather than re-typing the same logic into its own `app.js`/`layout.js`.

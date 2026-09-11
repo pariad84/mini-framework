@@ -12,7 +12,10 @@ resource key, a field name, a UI label), and any app built on top must never rea
 implements itself in its own `layout.js` (see "Example folder structure" below).
 `fn.component.layout.js`, also at the repo root, is a reference implementation of those
 conventions -- not a framework file and not a dependency any example currently loads, kept here
-for later use. `fn.util.js`, also at the repo root, is different: `fn.util.selectFlat`/
+for later use. Its `popup`/`close-btn`/`save-btn` layouts are a synced copy of
+[pariad84/fn](https://github.com/pariad84/fn)'s `fn.layout.js`, the same canonical-source/synced-
+copy relationship `fn.js` has with that repo -- change them there first, then copy the result
+here; `form`/`list`/`pagination` stay defined only here. `fn.util.js`, also at the repo root, is different: `fn.util.selectFlat`/
 `fn.util.newButton`/`fn.util.saveForm`/`fn.util.route` are plain CRUD/UI-wiring logic with no
 reason to vary by example the way a layout's look does, so every example does load it. Example
 apps live in their own folders at the repo root, listed from `index.html` -- currently `crm/`,
@@ -100,8 +103,10 @@ the commit message, not just what the diff does.
 ## Workflow for changes
 
 1. Implement the change (in `fn.js` if it's the framework, in `fn.component.layout.js` if it's
-   the reference layout implementation, in `fn.util.js` if it's shared CRUD/UI-wiring logic, or
-   in whatever app you're building on top of it if it's app-specific).
+   the reference `form`/`list`/`pagination` implementation, in `fn.util.js` if it's shared
+   CRUD/UI-wiring logic, or in whatever app you're building on top of it if it's app-specific).
+   `popup`/`close-btn`/`save-btn` changes go in [pariad84/fn](https://github.com/pariad84/fn)'s
+   `fn.layout.js` first, then get copied into `fn.component.layout.js` here, same as `fn.js`.
 2. `node --check` on every file you touched, to catch syntax errors.
 3. Verify in an actual browser (Playwright) — load the relevant example's HTML file (e.g.
    `crm/index.html`), or build a scratch page loading `fn.js`, `fn.util.js`, then
